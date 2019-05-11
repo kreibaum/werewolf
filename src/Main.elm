@@ -16,8 +16,8 @@ import Platform exposing (Program)
 type alias Model =
     { templates : List String
     , selected : Dict String Int
-    , playerCount : Int
-    , playerCountRawText : String
+    , players : List String
+    , playersRawText : String
     }
 
 
@@ -25,15 +25,15 @@ type Msg
     = NoOp
     | AddRoleButtonClick String
     | RemoveRoleButtonClick String
-    | ChangePlayerCount String
+    | TypePlayerNames String
 
 
 init : Model
 init =
     { templates = [ "Werwolf", "Seherin", "Hexe", "Seelenretter", "Vampir", "Jäger" ]
     , selected = Dict.empty
-    , playerCount = 6
-    , playerCountRawText = String.fromInt 6
+    , players = [ "Ada", "Berd", "Carol", "Dave", "Esther", "Felix", "Greta" ]
+    , playersRawText = ""
     }
 
 
@@ -54,8 +54,8 @@ update msg model =
         RemoveRoleButtonClick template ->
             { model | selected = removeCard template model.selected }
 
-        ChangePlayerCount rawText ->
-            setPlayerCount rawText model
+        TypePlayerNames rawText ->
+            setPlayerNames rawText model
 
 
 addCard : String -> Dict String Int -> Dict String Int
@@ -81,13 +81,43 @@ cardCount model =
     List.sum <| Dict.values model.selected
 
 
-setPlayerCount : String -> Model -> Model
-setPlayerCount rawText model =
+
+-- setPlayerCount : String -> Model -> Model
+-- setPlayerCount rawText model =
+--     let
+--         newPlayerCount =
+--             String.toInt rawText |> Maybe.withDefault ()
+--     in
+--     { model | playerCount = newPlayerCount, playerCountRawText = rawText }
+
+
+setPlayerNames : String -> Model -> Model
+setPlayerNames rawText model =
     let
-        newPlayerCount =
-            String.toInt rawText |> Maybe.withDefault model.playerCount
+        names =
+            parsePlayerNames rawText
+
+        newPlayers =
+            if List.length names > 0 then
+                names
+
+            else
+                model.players
     in
-    { model | playerCount = newPlayerCount, playerCountRawText = rawText }
+    { model | players = newPlayers, playersRawText = rawText }
+
+
+parsePlayerNames : String -> List String
+parsePlayerNames rawText =
+    rawText
+        |> String.split ","
+        |> List.map String.trim
+        |> List.filter (not << String.isEmpty)
+
+
+playerCount : Model -> Int
+playerCount model =
+    List.length model.players
 
 
 view : Model -> Html Msg
@@ -114,10 +144,10 @@ gameSetupHeader model =
 playerCountEditBox : Model -> Element Msg
 playerCountEditBox model =
     Input.text []
-        { onChange = ChangePlayerCount
-        , text = model.playerCountRawText
-        , placeholder = Just <| Input.placeholder [] <| text <| String.fromInt model.playerCount
-        , label = Input.labelAbove [] (text "Spielerzahl: ")
+        { onChange = TypePlayerNames
+        , text = model.playersRawText
+        , placeholder = Just <| Input.placeholder [] <| text <| String.join ", " model.players
+        , label = Input.labelAbove [] (text "Mitspieler: ")
         }
 
 
@@ -155,14 +185,14 @@ roleList model =
             Dict.values (Dict.map roleDescription model.selected)
 
         villagerCount =
-            model.playerCount - cardCount model
+            playerCount model - cardCount model
 
         additionalVillagers =
             roleDescription "Dorfbewohner" villagerCount
 
         allCards =
             if villagerCount < 0 then
-                List.append specialCards [ playerLimitBreached model.playerCount (cardCount model) ]
+                List.append specialCards [ playerLimitBreached (playerCount model) (cardCount model) ]
 
             else if villagerCount == 0 then
                 specialCards
