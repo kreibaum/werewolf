@@ -3,6 +3,7 @@ module Main exposing (main)
 import Browser
 import Components exposing (uiArray)
 import Dict exposing (Dict)
+import DictHelper as Dict
 import Element exposing (Element, alignRight, el, fill, height, padding, rgb255, spacing, text, width)
 import Element.Background as Background
 import Element.Border as Border
@@ -280,7 +281,9 @@ roleList : Model -> Element Msg
 roleList model =
     let
         specialCards =
-            Dict.values (Dict.map (roleDescription model) model.selected)
+            model.templates
+                |> List.filterMap (\t -> Dict.getWithKey t model.selected)
+                |> List.map (roleDescription model)
 
         villagerCount =
             playerCount model - cardCount model
@@ -302,8 +305,8 @@ roleList model =
         allCards
 
 
-roleDescription : Model -> String -> CardInformation -> Element Msg
-roleDescription model name count =
+roleDescription : Model -> ( String, CardInformation ) -> Element Msg
+roleDescription model ( name, count ) =
     if model.openCard == Just name then
         cardOpenView model name count
 
