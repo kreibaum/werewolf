@@ -26,12 +26,16 @@ type alias Model =
 type alias CardInformation =
     { count : Int
     , players : Set String
+    , targetPlayers : Set String
     }
 
 
 newCard : CardInformation
 newCard =
-    { count = 1, players = Set.empty }
+    { count = 1
+    , players = Set.empty
+    , targetPlayers = Set.empty
+    }
 
 
 type Msg
@@ -43,6 +47,8 @@ type Msg
     | CloseCard
     | AssignPlayerToRole String String
     | RemovePlayerFromRole String String
+    | TargetPlayer String String
+    | RemoveTargetPlayer String String
 
 
 init : Model
@@ -86,6 +92,12 @@ update msg model =
 
         RemovePlayerFromRole cardName playerName ->
             removePlayerFromRole cardName playerName model
+
+        TargetPlayer cardName playerName ->
+            targetPlayer cardName playerName model
+
+        RemoveTargetPlayer cardName playerName ->
+            removeTargetPlayer cardName playerName model
 
 
 addCard : String -> Dict String CardInformation -> Dict String CardInformation
@@ -178,6 +190,26 @@ removePlayerFromRole cardName playerName model =
 removePlayer : String -> CardInformation -> CardInformation
 removePlayer name cardInfo =
     { cardInfo | players = Set.remove name cardInfo.players }
+
+
+targetPlayer : String -> String -> Model -> Model
+targetPlayer cardName playerName model =
+    { model | selected = Dict.update cardName (Maybe.map <| targetOnePlayer playerName) model.selected }
+
+
+targetOnePlayer : String -> CardInformation -> CardInformation
+targetOnePlayer name cardInfo =
+    { cardInfo | targetPlayers = Set.insert name cardInfo.targetPlayers }
+
+
+removeTargetPlayer : String -> String -> Model -> Model
+removeTargetPlayer cardName playerName model =
+    { model | selected = Dict.update cardName (Maybe.map <| removeTargetOnePlayer playerName) model.selected }
+
+
+removeTargetOnePlayer : String -> CardInformation -> CardInformation
+removeTargetOnePlayer name cardInfo =
+    { cardInfo | targetPlayers = Set.remove name cardInfo.targetPlayers }
 
 
 
@@ -352,40 +384,77 @@ cardContent model name cardInfo =
         ]
         [ text "Spielerauswahl"
         , playerCardSelection model name cardInfo
+        , text "Zielauswahl"
+        , cardTargetSelection model name cardInfo
         ]
 
 
 playerCardSelection : Model -> String -> CardInformation -> Element Msg
 playerCardSelection model name cardInfo =
     model.players
-        |> List.map (playerSelector model name cardInfo)
+        |> List.map (playerSelector name cardInfo)
         |> Element.wrappedRow [ spacing 5 ]
 
 
-playerSelector : Model -> String -> CardInformation -> String -> Element Msg
-playerSelector model cardName cardInfo playerName =
+playerSelector : String -> CardInformation -> String -> Element Msg
+playerSelector cardName cardInfo playerName =
     let
         isAlreadySelected =
             Set.member playerName cardInfo.players
-    in
-    if isAlreadySelected then
-        el
-            [ Border.rounded 5
-            , padding 7
-            , Background.color (rgb255 200 200 200)
-            , Events.onClick (RemovePlayerFromRole cardName playerName)
-            ]
-            (text playerName)
 
-    else
-        el
-            [ Border.rounded 5
-            , padding 7
-            , Border.color (rgb255 200 200 200)
-            , Border.width 1
-            , Events.onClick (AssignPlayerToRole cardName playerName)
-            ]
-            (text playerName)
+        event =
+            if isAlreadySelected then
+                RemovePlayerFromRole cardName playerName
+
+            else
+                AssignPlayerToRole cardName playerName
+    in
+    onOffButton isAlreadySelected playerName event
+
+
+cardTargetSelection : Model -> String -> CardInformation -> Element Msg
+cardTargetSelection model name cardInfo =
+    model.players
+        |> List.map (targetSelector name cardInfo)
+        |> Element.wrappedRow [ spacing 5 ]
+
+
+targetSelector : String -> CardInformation -> String -> Element Msg
+targetSelector cardName cardInfo playerName =
+    let
+        isAlreadySelected =
+            Set.member playerName cardInfo.targetPlayers
+
+        event =
+            if isAlreadySelected then
+                RemoveTargetPlayer cardName playerName
+
+            else
+                TargetPlayer cardName playerName
+    in
+    onOffButton isAlreadySelected playerName event
+
+
+onOffButton : Bool -> String -> Msg -> Element Msg
+onOffButton isSelected caption event =
+    let
+        selectionStyle =
+            if isSelected then
+                [ Background.color (rgb255 200 200 200) ]
+
+            else
+                [ Border.color (rgb255 200 200 200)
+                , Border.width 1
+                ]
+
+        styles =
+            List.append selectionStyle
+                [ Border.rounded 5
+                , padding 7
+                , Events.onClick event
+                ]
+    in
+    el styles (text caption)
 
 
 playerLimitBreached : Int -> Int -> Element msg
