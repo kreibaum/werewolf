@@ -261,8 +261,10 @@ mainView model =
 
 gameSetupHeader : Model -> Element Msg
 gameSetupHeader model =
-    Element.row [ width fill ]
-        [ playerCountEditBox model ]
+    Element.column [ width fill, spacing 10 ]
+        [ playerCountEditBox model
+        , playerDuplicationWarning model
+        ]
 
 
 playerCountEditBox : Model -> Element Msg
@@ -273,6 +275,24 @@ playerCountEditBox model =
         , placeholder = Just <| Input.placeholder [] <| text <| String.join ", " model.players
         , label = Input.labelAbove [] (text "Mitspieler: ")
         }
+
+
+playerDuplicationWarning : Model -> Element msg
+playerDuplicationWarning model =
+    let
+        duplicates : List String
+        duplicates =
+            List.findDuplicates model.players
+                |> List.map (\( name, _ ) -> name)
+
+        duplicateNames =
+            String.join ", " duplicates
+    in
+    if List.isEmpty duplicates then
+        Element.none
+
+    else
+        text <| "Jeder Name darf nur einmal vorkommen, aber " ++ duplicateNames ++ " ist mehrfach angegeben."
 
 
 addCardsView : List String -> Element Msg
