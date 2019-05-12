@@ -4,7 +4,7 @@ import Browser
 import Components exposing (uiArray)
 import Dict exposing (Dict)
 import DictHelper as Dict
-import Element exposing (Element, alignRight, el, fill, height, padding, rgb255, spacing, text, width)
+import Element exposing (Color, Element, alignRight, el, fill, height, padding, rgb255, spacing, text, width)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
@@ -54,9 +54,9 @@ type Msg
 
 init : Model
 init =
-    { templates = [ "Werwolf", "Seherin", "Hexe", "Seelenretter", "Vampir", "Jäger", "Amor" ]
+    { templates = [ "Werwolf", "Seherin", "Hexe", "Seelenretter", "Vampir", "Jäger", "Amor", "Fauli", "Mathematiker", "Gärtner" ]
     , selected = Dict.empty
-    , players = [ "Ada", "Berd", "Carol", "Dave", "Esther", "Felix", "Greta" ]
+    , players = [ "Ada", "Bert", "Carol", "Dave", "Esther", "Felix", "Greta" ]
     , playersRawText = ""
     , openCard = Nothing
     }
@@ -233,6 +233,16 @@ fontScale factor =
         base * 1.25 ^ toFloat factor |> round
 
 
+targetColor : Color
+targetColor =
+    rgb255 255 255 150
+
+
+roleColor : Color
+roleColor =
+    rgb255 200 200 255
+
+
 view : Model -> Html Msg
 view model =
     Element.layout [ width fill, Font.size <| fontScale 1 ]
@@ -245,6 +255,7 @@ mainView model =
         [ gameSetupHeader model
         , addCardsView model.templates
         , roleList model
+        , playerSummary model
         ]
 
 
@@ -478,43 +489,48 @@ onOffButton isSelected caption event =
     el styles (text caption)
 
 
-
--- , playerBadgeList (rgb255 200 200 255) (List.filterSet cardInfo.players model.players)
--- , targetBadgeList (List.filterSet cardInfo.targetPlayers model.players)
-
-
 playerBadgeList : Model -> CardInformation -> Element msg
 playerBadgeList model cardInfo =
     let
         selectedPlayers =
             model.players
                 |> List.filterSet cardInfo.players
-                |> List.map (playerBadge (rgb255 200 200 255))
+                |> List.map roleBadge
 
         targetPlayers =
             model.players
                 |> List.filterSet cardInfo.targetPlayers
-                |> List.map (playerBadge (rgb255 255 255 150))
+                |> List.map targetBadge
 
         entries =
             if List.isEmpty targetPlayers then
                 selectedPlayers
 
             else
-                List.append selectedPlayers (text "targeting" :: targetPlayers)
+                List.append selectedPlayers (text "mit Ziel" :: targetPlayers)
     in
     Element.wrappedRow [ spacing 5, width fill ] <| entries
 
 
-playerBadge : Element.Color -> String -> Element msg
-playerBadge color name =
+badge : Element.Color -> String -> Element msg
+badge color caption =
     el
         [ Font.size <| fontScale -1
         , Border.rounded 3
         , padding 4
         , Background.color color
         ]
-        (text name)
+        (text caption)
+
+
+roleBadge : String -> Element msg
+roleBadge caption =
+    badge roleColor caption
+
+
+targetBadge : String -> Element msg
+targetBadge caption =
+    badge targetColor caption
 
 
 playerLimitBreached : Int -> Int -> Element msg
@@ -534,3 +550,74 @@ playerLimitBreached expected actual =
                 ++ String.fromInt expected
                 ++ " Spieler verteilt!"
         )
+
+
+playerSummary : Model -> Element Msg
+playerSummary model =
+    Element.column
+        [ width fill, spacing 5 ]
+    <|
+        text "Spielerübersicht:"
+            :: List.map (playerDetails model) model.players
+
+
+playerDetails : Model -> String -> Element Msg
+playerDetails model name =
+    let
+        cards =
+            model.templates
+                |> List.filterSet (cardsByPlayer model name)
+                |> List.map roleBadge
+
+        cardDisplay =
+            if List.isEmpty cards then
+                []
+
+            else
+                text "ist selbst" :: cards
+
+        targetDisplayTextGlue =
+            if List.isEmpty cardDisplay then
+                "ist Ziel von"
+
+            else
+                "und ist Ziel von"
+
+        targeting =
+            model.templates
+                |> List.filterSet (targetingCardsByPlayer model name)
+                |> List.map targetBadge
+
+        targetingDisplay =
+            if List.isEmpty targeting then
+                []
+
+            else
+                text targetDisplayTextGlue :: targeting
+    in
+    Element.row
+        [ width fill
+        , spacing 5
+        , Border.rounded 5
+        , Border.color (rgb255 0 0 0)
+        , Border.width 1
+        , padding 10
+        ]
+    <|
+        List.append (text name :: cardDisplay) targetingDisplay
+
+
+cardsByPlayer : Model -> String -> Set String
+cardsByPlayer model name =
+    model.selected
+        |> Dict.filter (\_ cardInfo -> Set.member name cardInfo.players)
+        |> Dict.keys
+        |> Set.fromList
+
+
+targetingCardsByPlayer : Model -> String -> Set String
+targetingCardsByPlayer model name =
+    model.selected
+        |> Dict.filter (\_ cardInfo -> Set.member name cardInfo.targetPlayers)
+        |> Dict.keys
+        |> Set.fromList
