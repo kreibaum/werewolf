@@ -60,7 +60,7 @@ type Msg
 
 init : Model
 init =
-    { templates = [ "Werwolf", "Seherin", "Hexe", "Seelenretter", "Vampir", "Jäger", "Amor", "Fauli", "Mathematiker", "Gärtner" ]
+    { templates = [ "Amor", "Werwolf", "Seherin", "Hexe", "Seelenretter", "Vampir", "Jäger", "Fauli", "Mathematiker", "Gärtner" ]
     , selected = Dict.empty
     , players = [ "Ada", "Bert", "Carol", "Dave", "Esther", "Felix", "Greta" ]
     , deadPlayers = Set.empty
@@ -263,9 +263,28 @@ roleColor =
     rgb255 200 200 255
 
 
+shadedBackgroundColor : Color
+shadedBackgroundColor =
+    rgb255 230 230 230
+
+
+hardBorderColor : Color
+hardBorderColor =
+    rgb255 100 100 100
+
+
+textColor : Color
+textColor =
+    rgb255 0 0 0
+
+
 view : Model -> Html Msg
 view model =
-    Element.layout [ width fill, Font.size <| fontScale 1 ]
+    Element.layout
+        [ width fill
+        , Font.size <| fontScale 1
+        , Font.color textColor
+        ]
         (mainView model)
 
 
@@ -332,8 +351,7 @@ buttonArray templates =
 roleButton : String -> Element Msg
 roleButton name =
     el
-        [ Background.color (rgb255 200 200 200)
-        , Font.color (rgb255 0 0 0)
+        [ Background.color shadedBackgroundColor
         , Border.rounded 5
         , padding 10
         , width fill
@@ -382,9 +400,8 @@ roleDescription model ( name, count ) =
 roleDescriptionClosed : Model -> String -> CardInformation -> Element Msg
 roleDescriptionClosed model name cardInfo =
     el
-        [ Font.color (rgb255 0 0 0)
-        , Border.rounded 5
-        , Border.color (rgb255 0 0 0)
+        [ Border.rounded 5
+        , Border.color hardBorderColor
         , Border.width 1
         , padding 10
         , width fill
@@ -423,7 +440,7 @@ cardOpenView : Model -> String -> CardInformation -> Element Msg
 cardOpenView model name cardInfo =
     Element.column
         [ Border.rounded 5
-        , Border.color (rgb255 0 0 0)
+        , Border.color hardBorderColor
         , Border.width 1
         , width fill
         ]
@@ -435,8 +452,7 @@ cardOpenView model name cardInfo =
 cardHeaderOpen : Model -> String -> CardInformation -> Element Msg
 cardHeaderOpen model name cardInfo =
     el
-        [ Font.color (rgb255 0 0 0)
-        , Font.bold
+        [ Font.bold
         , padding 10
         , width fill
         ]
@@ -449,7 +465,7 @@ cardHeaderOpen model name cardInfo =
 cardContent : Model -> String -> CardInformation -> Element Msg
 cardContent model name cardInfo =
     Element.column
-        [ Background.color (rgb255 230 230 230)
+        [ Background.color shadedBackgroundColor
         , width fill
         , height fill
         , padding 10
@@ -481,7 +497,7 @@ playerSelector model cardName cardInfo playerName =
             else
                 AssignPlayerToRole cardName playerName
     in
-    onOffButton isAlreadySelected (playerNameText model playerName) event
+    onOffButton roleColor isAlreadySelected (playerNameText model playerName) event
 
 
 cardTargetSelection : Model -> String -> CardInformation -> Element Msg
@@ -504,18 +520,18 @@ targetSelector model cardName cardInfo playerName =
             else
                 TargetPlayer cardName playerName
     in
-    onOffButton isAlreadySelected (playerNameText model playerName) event
+    onOffButton targetColor isAlreadySelected (playerNameText model playerName) event
 
 
-onOffButton : Bool -> Element Never -> Msg -> Element Msg
-onOffButton isSelected caption event =
+onOffButton : Color -> Bool -> Element Never -> Msg -> Element Msg
+onOffButton color isSelected caption event =
     let
         selectionStyle =
             if isSelected then
-                [ Background.color (rgb255 200 200 200) ]
+                [ Background.color color ]
 
             else
-                [ Border.color (rgb255 200 200 200)
+                [ Border.color color
                 , Border.width 1
                 ]
 
@@ -578,9 +594,8 @@ targetBadge caption =
 playerLimitBreached : Int -> Int -> Element msg
 playerLimitBreached expected actual =
     el
-        [ Font.color (rgb255 0 0 0)
-        , Border.rounded 5
-        , Border.color (rgb255 0 0 0)
+        [ Border.rounded 5
+        , Border.color hardBorderColor
         , Border.width 1
         , padding 10
         , width fill
@@ -618,7 +633,7 @@ openPlayer model name =
         [ width fill
         , spacing 5
         , Border.rounded 5
-        , Border.color (rgb255 0 0 0)
+        , Border.color hardBorderColor
         , Border.width 1
         ]
         [ openPlayerHeader model name, openPlayerBody model name ]
@@ -640,7 +655,7 @@ openPlayerBody model name =
     Element.column
         [ width fill
         , spacing 5
-        , Background.color (rgb255 200 200 200)
+        , Background.color shadedBackgroundColor
         , padding 10
         ]
         [ deadOrAliveSetting model name ]
@@ -661,7 +676,7 @@ closedPlayer model name =
         [ width fill
         , spacing 5
         , Border.rounded 5
-        , Border.color (rgb255 0 0 0)
+        , Border.color hardBorderColor
         , Border.width 1
         , padding 10
         , Events.onClick (SelectPlayer name)
