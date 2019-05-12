@@ -20,8 +20,10 @@ type alias Model =
     { templates : List String
     , selected : Dict String CardInformation
     , players : List String
+    , deadPlayers : Set String
     , playersRawText : String
     , openCard : Maybe String
+    , openPlayer : Maybe String
     }
 
 
@@ -46,10 +48,14 @@ type Msg
     | TypePlayerNames String
     | SelectCard String
     | CloseCard
+    | SelectPlayer String
+    | ClosePlayer
     | AssignPlayerToRole String String
     | RemovePlayerFromRole String String
     | TargetPlayer String String
     | RemoveTargetPlayer String String
+    | KillPlayer String
+    | RevivePlayer String
 
 
 init : Model
@@ -57,8 +63,10 @@ init =
     { templates = [ "Werwolf", "Seherin", "Hexe", "Seelenretter", "Vampir", "Jäger", "Amor", "Fauli", "Mathematiker", "Gärtner" ]
     , selected = Dict.empty
     , players = [ "Ada", "Bert", "Carol", "Dave", "Esther", "Felix", "Greta" ]
+    , deadPlayers = Set.empty
     , playersRawText = ""
     , openCard = Nothing
+    , openPlayer = Nothing
     }
 
 
@@ -85,6 +93,12 @@ update msg model =
         CloseCard ->
             { model | openCard = Nothing }
 
+        SelectPlayer name ->
+            { model | openPlayer = Just name }
+
+        ClosePlayer ->
+            { model | openPlayer = Nothing }
+
         AssignPlayerToRole cardName playerName ->
             assignPlayerToRole cardName playerName model
 
@@ -96,6 +110,12 @@ update msg model =
 
         RemoveTargetPlayer cardName playerName ->
             removeTargetPlayer cardName playerName model
+
+        KillPlayer name ->
+            { model | deadPlayers = Set.insert name model.deadPlayers }
+
+        RevivePlayer name ->
+            { model | deadPlayers = Set.remove name model.deadPlayers }
 
 
 addCard : String -> Dict String CardInformation -> Dict String CardInformation
@@ -444,12 +464,12 @@ cardContent model name cardInfo =
 playerCardSelection : Model -> String -> CardInformation -> Element Msg
 playerCardSelection model name cardInfo =
     model.players
-        |> List.map (playerSelector name cardInfo)
+        |> List.map (playerSelector model name cardInfo)
         |> Element.wrappedRow [ spacing 5 ]
 
 
-playerSelector : String -> CardInformation -> String -> Element Msg
-playerSelector cardName cardInfo playerName =
+playerSelector : Model -> String -> CardInformation -> String -> Element Msg
+playerSelector model cardName cardInfo playerName =
     let
         isAlreadySelected =
             Set.member playerName cardInfo.players
@@ -461,18 +481,18 @@ playerSelector cardName cardInfo playerName =
             else
                 AssignPlayerToRole cardName playerName
     in
-    onOffButton isAlreadySelected playerName event
+    onOffButton isAlreadySelected (playerNameText model playerName) event
 
 
 cardTargetSelection : Model -> String -> CardInformation -> Element Msg
 cardTargetSelection model name cardInfo =
     model.players
-        |> List.map (targetSelector name cardInfo)
+        |> List.map (targetSelector model name cardInfo)
         |> Element.wrappedRow [ spacing 5 ]
 
 
-targetSelector : String -> CardInformation -> String -> Element Msg
-targetSelector cardName cardInfo playerName =
+targetSelector : Model -> String -> CardInformation -> String -> Element Msg
+targetSelector model cardName cardInfo playerName =
     let
         isAlreadySelected =
             Set.member playerName cardInfo.targetPlayers
@@ -484,10 +504,10 @@ targetSelector cardName cardInfo playerName =
             else
                 TargetPlayer cardName playerName
     in
-    onOffButton isAlreadySelected playerName event
+    onOffButton isAlreadySelected (playerNameText model playerName) event
 
 
-onOffButton : Bool -> String -> Msg -> Element Msg
+onOffButton : Bool -> Element Never -> Msg -> Element Msg
 onOffButton isSelected caption event =
     let
         selectionStyle =
@@ -506,7 +526,7 @@ onOffButton isSelected caption event =
                 , Events.onClick event
                 ]
     in
-    el styles (text caption)
+    el styles (Element.map never caption)
 
 
 playerBadgeList : Model -> CardInformation -> Element msg
@@ -515,12 +535,12 @@ playerBadgeList model cardInfo =
         selectedPlayers =
             model.players
                 |> List.filterSet cardInfo.players
-                |> List.map roleBadge
+                |> List.map (playerNameText model >> roleBadge)
 
         targetPlayers =
             model.players
                 |> List.filterSet cardInfo.targetPlayers
-                |> List.map targetBadge
+                |> List.map (playerNameText model >> targetBadge)
 
         entries =
             if List.isEmpty targetPlayers then
@@ -532,25 +552,27 @@ playerBadgeList model cardInfo =
     Element.wrappedRow [ spacing 5, width fill ] <| entries
 
 
-badge : Element.Color -> String -> Element msg
-badge color caption =
+badge : List (Element.Attribute msg) -> Element msg -> Element msg
+badge styles caption =
     el
-        [ Font.size <| fontScale -1
-        , Border.rounded 3
-        , padding 4
-        , Background.color color
-        ]
-        (text caption)
+        (List.append
+            [ Font.size <| fontScale -1
+            , Border.rounded 3
+            , padding 4
+            ]
+            styles
+        )
+        caption
 
 
-roleBadge : String -> Element msg
+roleBadge : Element msg -> Element msg
 roleBadge caption =
-    badge roleColor caption
+    badge [ Background.color roleColor ] caption
 
 
-targetBadge : String -> Element msg
+targetBadge : Element msg -> Element msg
 targetBadge caption =
-    badge targetColor caption
+    badge [ Background.color targetColor ] caption
 
 
 playerLimitBreached : Int -> Int -> Element msg
@@ -583,11 +605,77 @@ playerSummary model =
 
 playerDetails : Model -> String -> Element Msg
 playerDetails model name =
+    if model.openPlayer == Just name then
+        openPlayer model name
+
+    else
+        closedPlayer model name
+
+
+openPlayer : Model -> String -> Element Msg
+openPlayer model name =
+    Element.column
+        [ width fill
+        , spacing 5
+        , Border.rounded 5
+        , Border.color (rgb255 0 0 0)
+        , Border.width 1
+        ]
+        [ openPlayerHeader model name, openPlayerBody model name ]
+
+
+openPlayerHeader : Model -> String -> Element Msg
+openPlayerHeader model name =
+    Element.row
+        [ width fill
+        , spacing 5
+        , Events.onClick ClosePlayer
+        , padding 10
+        ]
+        (playerHeader model name)
+
+
+openPlayerBody : Model -> String -> Element Msg
+openPlayerBody model name =
+    Element.column
+        [ width fill
+        , spacing 5
+        , Background.color (rgb255 200 200 200)
+        , padding 10
+        ]
+        [ deadOrAliveSetting model name ]
+
+
+deadOrAliveSetting : Model -> String -> Element Msg
+deadOrAliveSetting model name =
+    if Set.member name model.deadPlayers then
+        el [ Events.onClick (RevivePlayer name) ] (text "Wiederbeleben")
+
+    else
+        el [ Events.onClick (KillPlayer name) ] (text "Töten")
+
+
+closedPlayer : Model -> String -> Element Msg
+closedPlayer model name =
+    Element.row
+        [ width fill
+        , spacing 5
+        , Border.rounded 5
+        , Border.color (rgb255 0 0 0)
+        , Border.width 1
+        , padding 10
+        , Events.onClick (SelectPlayer name)
+        ]
+        (playerHeader model name)
+
+
+playerHeader : Model -> String -> List (Element msg)
+playerHeader model name =
     let
         cards =
             model.templates
                 |> List.filterSet (cardsByPlayer model name)
-                |> List.map roleBadge
+                |> List.map (text >> roleBadge)
 
         cardDisplay =
             if List.isEmpty cards then
@@ -606,7 +694,7 @@ playerDetails model name =
         targeting =
             model.templates
                 |> List.filterSet (targetingCardsByPlayer model name)
-                |> List.map targetBadge
+                |> List.map (text >> targetBadge)
 
         targetingDisplay =
             if List.isEmpty targeting then
@@ -615,16 +703,20 @@ playerDetails model name =
             else
                 text targetDisplayTextGlue :: targeting
     in
-    Element.row
-        [ width fill
-        , spacing 5
-        , Border.rounded 5
-        , Border.color (rgb255 0 0 0)
-        , Border.width 1
-        , padding 10
-        ]
-    <|
-        List.append (text name :: cardDisplay) targetingDisplay
+    List.append (playerNameText model name :: cardDisplay) targetingDisplay
+
+
+playerNameText : Model -> String -> Element msg
+playerNameText model name =
+    let
+        style =
+            if Set.member name model.deadPlayers then
+                [ Font.strike ]
+
+            else
+                []
+    in
+    el style (text name)
 
 
 cardsByPlayer : Model -> String -> Set String
