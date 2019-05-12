@@ -11,6 +11,7 @@ import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
+import ListHelper as List
 import Platform exposing (Program)
 import Set exposing (Set)
 
@@ -40,8 +41,7 @@ newCard =
 
 
 type Msg
-    = NoOp
-    | AddRoleButtonClick String
+    = AddRoleButtonClick String
     | RemoveRoleButtonClick String
     | TypePlayerNames String
     | SelectCard String
@@ -54,7 +54,7 @@ type Msg
 
 init : Model
 init =
-    { templates = [ "Werwolf", "Seherin", "Hexe", "Seelenretter", "Vampir", "Jäger" ]
+    { templates = [ "Werwolf", "Seherin", "Hexe", "Seelenretter", "Vampir", "Jäger", "Amor" ]
     , selected = Dict.empty
     , players = [ "Ada", "Berd", "Carol", "Dave", "Esther", "Felix", "Greta" ]
     , playersRawText = ""
@@ -72,9 +72,6 @@ update msg model =
     case msg of
         AddRoleButtonClick name ->
             { model | selected = addCard name model.selected }
-
-        NoOp ->
-            model
 
         RemoveRoleButtonClick template ->
             { model | selected = removeCard template model.selected }
@@ -219,9 +216,26 @@ removeTargetOnePlayer name cardInfo =
 -------------------------------
 
 
+fontScale : Int -> Int
+fontScale factor =
+    let
+        base =
+            16
+    in
+    if factor > 0 then
+        base * 1.25 ^ toFloat (factor - 1) |> round
+
+    else if factor == 0 then
+        base
+
+    else
+        -- negative factor
+        base * 1.25 ^ toFloat factor |> round
+
+
 view : Model -> Html Msg
 view model =
-    Element.layout [ width fill ]
+    Element.layout [ width fill, Font.size <| fontScale 1 ]
         (mainView model)
 
 
@@ -289,7 +303,7 @@ roleList model =
             playerCount model - cardCount model
 
         additionalVillagers =
-            roleDescriptionClosed "Dorfbewohner" { newCard | count = villagerCount }
+            roleDescriptionClosed model "Dorfbewohner" { newCard | count = villagerCount }
 
         allCards =
             if villagerCount < 0 then
@@ -311,11 +325,11 @@ roleDescription model ( name, count ) =
         cardOpenView model name count
 
     else
-        roleDescriptionClosed name count
+        roleDescriptionClosed model name count
 
 
-roleDescriptionClosed : String -> CardInformation -> Element Msg
-roleDescriptionClosed name cardInfo =
+roleDescriptionClosed : Model -> String -> CardInformation -> Element Msg
+roleDescriptionClosed model name cardInfo =
     el
         [ Font.color (rgb255 0 0 0)
         , Border.rounded 5
@@ -326,8 +340,12 @@ roleDescriptionClosed name cardInfo =
         ]
     <|
         Element.row
-            [ spacing 5 ]
-            [ text <| String.fromInt cardInfo.count, roleDescriptionLabelClosed name, removeCardButton name ]
+            [ spacing 5, width fill ]
+            [ text <| String.fromInt cardInfo.count
+            , roleDescriptionLabelClosed name
+            , playerBadgeList model cardInfo
+            , removeCardButton name
+            ]
 
 
 roleDescriptionLabelClosed : String -> Element Msg
@@ -373,7 +391,7 @@ cardHeaderOpen model name cardInfo =
         ]
     <|
         Element.row
-            [ spacing 5 ]
+            [ spacing 5, width fill ]
             [ text <| String.fromInt cardInfo.count, roleDescriptionLabelOpened name, removeCardButton name ]
 
 
@@ -458,6 +476,45 @@ onOffButton isSelected caption event =
                 ]
     in
     el styles (text caption)
+
+
+
+-- , playerBadgeList (rgb255 200 200 255) (List.filterSet cardInfo.players model.players)
+-- , targetBadgeList (List.filterSet cardInfo.targetPlayers model.players)
+
+
+playerBadgeList : Model -> CardInformation -> Element msg
+playerBadgeList model cardInfo =
+    let
+        selectedPlayers =
+            model.players
+                |> List.filterSet cardInfo.players
+                |> List.map (playerBadge (rgb255 200 200 255))
+
+        targetPlayers =
+            model.players
+                |> List.filterSet cardInfo.targetPlayers
+                |> List.map (playerBadge (rgb255 255 255 150))
+
+        entries =
+            if List.isEmpty targetPlayers then
+                selectedPlayers
+
+            else
+                List.append selectedPlayers (text "targeting" :: targetPlayers)
+    in
+    Element.wrappedRow [ spacing 5, width fill ] <| entries
+
+
+playerBadge : Element.Color -> String -> Element msg
+playerBadge color name =
+    el
+        [ Font.size <| fontScale -1
+        , Border.rounded 3
+        , padding 4
+        , Background.color color
+        ]
+        (text name)
 
 
 playerLimitBreached : Int -> Int -> Element msg
