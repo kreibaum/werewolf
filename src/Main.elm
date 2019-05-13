@@ -4,7 +4,7 @@ import Browser
 import Components exposing (uiArray)
 import Dict exposing (Dict)
 import DictHelper as Dict
-import Element exposing (Color, Element, alignRight, el, fill, fillPortion, height, padding, rgb255, spacing, text, width)
+import Element exposing (Color, Element, alignRight, alignTop, el, fill, fillPortion, height, padding, rgb255, spacing, text, width)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
@@ -30,6 +30,7 @@ type alias Model =
     , openCard : Maybe String
     , openPlayer : Maybe String
     , phase : GamePhase
+    , uiScale : Int
     }
 
 
@@ -75,6 +76,8 @@ type Msg
     | KillPlayer String
     | RevivePlayer String
     | SetPhase GamePhase
+    | IncreaseFontSize
+    | DecreaseFontSize
 
 
 init : Model
@@ -89,6 +92,7 @@ init =
     , openCard = Nothing
     , openPlayer = Nothing
     , phase = Preparation
+    , uiScale = 0
     }
 
 
@@ -144,6 +148,12 @@ update msg model =
 
         SetPhase newPhase ->
             { model | phase = newPhase }
+
+        IncreaseFontSize ->
+            { model | uiScale = model.uiScale + 1 }
+
+        DecreaseFontSize ->
+            { model | uiScale = model.uiScale - 1 }
 
 
 addCard : String -> Dict String CardInformation -> Dict String CardInformation
@@ -274,21 +284,9 @@ removeTargetOnePlayer name cardInfo =
 -------------------------------
 
 
-fontScale : Int -> Int
-fontScale factor =
-    let
-        base =
-            22
-    in
-    if factor > 0 then
-        base * 1.25 ^ toFloat (factor - 1) |> round
-
-    else if factor == 0 then
-        base
-
-    else
-        -- negative factor
-        base * 1.25 ^ toFloat factor |> round
+fontScale : Model -> Int -> Int
+fontScale model factor =
+    24 * 1.1 ^ toFloat (factor + model.uiScale) |> round
 
 
 targetColor : Color
@@ -325,7 +323,7 @@ view : Model -> Html Msg
 view model =
     Element.layout
         [ width fill
-        , Font.size <| fontScale 1
+        , Font.size <| fontScale model 0
         , Font.color textColor
         ]
         (mainView model)
@@ -408,7 +406,7 @@ phaseTab model phase =
         , spacing 10
         , Events.onClick (SetPhase phase)
         ]
-        [ el [ Element.centerX, Font.size <| fontScale 3 ] <| Element.html <| Icon.view icon
+        [ el [ Element.centerX, Font.size <| fontScale model 4 ] <| Element.html <| Icon.view icon
         , el [ Element.centerX ] (text caption)
         ]
 
@@ -417,7 +415,8 @@ gameSetupHeader : Model -> Element Msg
 gameSetupHeader model =
     if model.phase == Preparation then
         Element.column [ width fill, spacing 10 ]
-            [ playerCountEditBox model
+            [ setupTitle model
+            , playerCountEditBox model
             , playerDuplicationWarning model
             , customRolesEditBox model
             , addCardsView (templateList model)
@@ -425,6 +424,32 @@ gameSetupHeader model =
 
     else
         Element.none
+
+
+setupTitle : Model -> Element Msg
+setupTitle model =
+    Element.row
+        [ width fill, spacing 10 ]
+        [ el [ Font.size <| fontScale model 6 ] (text "Werwolf Klemmbrett")
+        , zoomButton model [ Events.onClick IncreaseFontSize ] (Element.html <| Icon.view Solid.searchPlus)
+        , zoomButton model [ Events.onClick DecreaseFontSize ] (Element.html <| Icon.view Solid.searchMinus)
+        ]
+
+
+zoomButton : Model -> List (Element.Attribute msg) -> Element msg -> Element msg
+zoomButton model styles caption =
+    el
+        (List.append
+            [ Background.color lightShade
+            , alignRight
+            , alignTop
+            , Font.size <| fontScale model -2
+            , Border.rounded 5
+            , padding 10
+            ]
+            styles
+        )
+        caption
 
 
 playerCountEditBox : Model -> Element Msg
@@ -737,12 +762,12 @@ playerBadgeList model cardInfo =
         selectedPlayers =
             model.players
                 |> List.filterSet cardInfo.players
-                |> List.map (playerNameText model >> roleBadge)
+                |> List.map (playerNameText model >> roleBadge model)
 
         targetPlayers =
             model.players
                 |> List.filterSet cardInfo.targetPlayers
-                |> List.map (playerNameText model >> targetBadge)
+                |> List.map (playerNameText model >> targetBadge model)
 
         entries =
             if List.isEmpty targetPlayers then
@@ -754,11 +779,11 @@ playerBadgeList model cardInfo =
     Element.wrappedRow [ spacing 5, width fill ] <| entries
 
 
-badge : List (Element.Attribute msg) -> Element msg -> Element msg
-badge styles caption =
+badge : Model -> List (Element.Attribute msg) -> Element msg -> Element msg
+badge model styles caption =
     el
         (List.append
-            [ Font.size <| fontScale -2
+            [ Font.size <| fontScale model -4
             , Border.rounded 3
             , padding 4
             ]
@@ -767,14 +792,14 @@ badge styles caption =
         caption
 
 
-roleBadge : Element msg -> Element msg
-roleBadge caption =
-    badge [ Background.color roleColor ] caption
+roleBadge : Model -> Element msg -> Element msg
+roleBadge model caption =
+    badge model [ Background.color roleColor ] caption
 
 
-targetBadge : Element msg -> Element msg
-targetBadge caption =
-    badge [ Background.color targetColor ] caption
+targetBadge : Model -> Element msg -> Element msg
+targetBadge model caption =
+    badge model [ Background.color targetColor ] caption
 
 
 playerLimitBreached : Int -> Int -> Element msg
@@ -874,7 +899,7 @@ playerHeader model name =
         cards =
             templateList model
                 |> List.filterSet (cardsByPlayer model name)
-                |> List.map (text >> roleBadge)
+                |> List.map (text >> roleBadge model)
 
         cardDisplay =
             if List.isEmpty cards then
@@ -893,7 +918,7 @@ playerHeader model name =
         targeting =
             templateList model
                 |> List.filterSet (targetingCardsByPlayer model name)
-                |> List.map (text >> targetBadge)
+                |> List.map (text >> targetBadge model)
 
         targetingDisplay =
             if List.isEmpty targeting then
