@@ -372,7 +372,13 @@ roleList model =
             playerCount model - cardCount model
 
         additionalVillagers =
-            roleDescriptionClosed model "Dorfbewohner" { newCard | count = villagerCount }
+            el
+                [ Border.rounded 5
+                , Border.color hardBorderColor
+                , Border.width 1
+                , width fill
+                ]
+                (roleHeader model "Dorfbewohner" { newCard | count = villagerCount })
 
         allCards =
             if villagerCount < 0 then
@@ -403,27 +409,33 @@ roleDescriptionClosed model name cardInfo =
         [ Border.rounded 5
         , Border.color hardBorderColor
         , Border.width 1
-        , padding 10
         , width fill
         ]
     <|
         Element.row
             [ spacing 5, width fill ]
-            [ text <| String.fromInt cardInfo.count
-            , roleDescriptionLabelClosed name
-            , playerBadgeList model cardInfo
+            [ roleHeader model name cardInfo
             , removeCardButton name
             ]
+
+
+roleHeader : Model -> String -> CardInformation -> Element Msg
+roleHeader model name cardInfo =
+    Element.row
+        [ spacing 5
+        , width fill
+        , padding 10
+        , Events.onClick (SelectCard name)
+        ]
+        [ text <| String.fromInt cardInfo.count
+        , text name
+        , playerBadgeList model cardInfo
+        ]
 
 
 roleDescriptionLabelClosed : String -> Element Msg
 roleDescriptionLabelClosed name =
     el [ Events.onClick (SelectCard name) ] (text name)
-
-
-roleDescriptionLabelOpened : String -> Element Msg
-roleDescriptionLabelOpened name =
-    el [ Events.onClick CloseCard ] (text name)
 
 
 removeCardButton : String -> Element Msg
@@ -432,6 +444,8 @@ removeCardButton template =
         [ alignRight
         , Events.onClick (RemoveRoleButtonClick template)
         , Background.color (rgb255 255 200 200)
+        , height fill
+        , padding 10
         ]
         (text "x")
 
@@ -451,15 +465,22 @@ cardOpenView model name cardInfo =
 
 cardHeaderOpen : String -> CardInformation -> Element Msg
 cardHeaderOpen name cardInfo =
-    el
-        [ Font.bold
-        , padding 10
+    Element.row
+        [ spacing 5, width fill ]
+        [ roleHeaderOpen name cardInfo, removeCardButton name ]
+
+
+roleHeaderOpen : String -> CardInformation -> Element Msg
+roleHeaderOpen name cardInfo =
+    Element.row
+        [ spacing 5
         , width fill
+        , padding 10
+        , Events.onClick CloseCard
         ]
-    <|
-        Element.row
-            [ spacing 5, width fill ]
-            [ text <| String.fromInt cardInfo.count, roleDescriptionLabelOpened name, removeCardButton name ]
+        [ text <| String.fromInt cardInfo.count
+        , text name
+        ]
 
 
 cardContent : Model -> String -> CardInformation -> Element Msg
