@@ -4,7 +4,9 @@ import Element exposing (Element, el, fill, spacing, width)
 import List.Extra as List
 
 
-{-| Ui Array component
+{-| Arranges the supplied elements in a grid with
+a fixed column count. If the last row isn't full there
+will be empty space.
 -}
 uiArray : Int -> List (Element msg) -> Element msg
 uiArray columnCount elements =
