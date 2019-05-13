@@ -1,6 +1,6 @@
 module ListHelper exposing (filterSet, findDuplicates)
 
-import Dict exposing (Dict)
+import Dict
 import Dict.Extra as Dict
 import DictHelper as Dict
 import List.Extra as List

@@ -240,7 +240,7 @@ fontScale : Int -> Int
 fontScale factor =
     let
         base =
-            16
+            24
     in
     if factor > 0 then
         base * 1.25 ^ toFloat (factor - 1) |> round
@@ -444,13 +444,13 @@ cardOpenView model name cardInfo =
         , Border.width 1
         , width fill
         ]
-        [ cardHeaderOpen model name cardInfo
+        [ cardHeaderOpen name cardInfo
         , cardContent model name cardInfo
         ]
 
 
-cardHeaderOpen : Model -> String -> CardInformation -> Element Msg
-cardHeaderOpen model name cardInfo =
+cardHeaderOpen : String -> CardInformation -> Element Msg
+cardHeaderOpen name cardInfo =
     el
         [ Font.bold
         , padding 10
