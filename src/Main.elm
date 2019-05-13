@@ -10,6 +10,9 @@ import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
+import FontAwesome.Icon as Icon
+import FontAwesome.Solid as Solid
+import FontAwesome.Styles
 import Html exposing (Html)
 import ListHelper as List
 import Platform exposing (Program)
@@ -281,7 +284,8 @@ view model =
 mainView : Model -> Element Msg
 mainView model =
     Element.column [ spacing 20, padding 10, width fill ]
-        [ gameSetupHeader model
+        [ Element.html FontAwesome.Styles.css
+        , gameSetupHeader model
         , addCardsView model.templates
         , roleList model
         , playerSummary model
@@ -432,7 +436,12 @@ removeCardButton template =
         , height fill
         , padding 10
         ]
-        (text "x")
+        trashIcon
+
+
+trashIcon : Element msg
+trashIcon =
+    Element.html <| Icon.view Solid.trash
 
 
 cardOpenView : Model -> String -> CardInformation -> Element Msg
@@ -732,12 +741,24 @@ playerNameText model name =
     let
         style =
             if Set.member name model.deadPlayers then
-                [ Font.strike ]
+                [ Font.strike, spacing 5 ]
 
             else
-                []
+                [ spacing 5 ]
+
+        content =
+            if Set.member name model.deadPlayers then
+                [ text name, deadIcon ]
+
+            else
+                [ text name ]
     in
-    el style (text name)
+    Element.row style content
+
+
+deadIcon : Element msg
+deadIcon =
+    el [] <| Element.html <| Icon.view Solid.skullCrossbones
 
 
 cardsByPlayer : Model -> String -> Set String
