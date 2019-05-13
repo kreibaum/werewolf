@@ -4,7 +4,7 @@ import Browser
 import Components exposing (uiArray)
 import Dict exposing (Dict)
 import DictHelper as Dict
-import Element exposing (Color, Element, alignRight, el, fill, height, padding, rgb255, spacing, text, width)
+import Element exposing (Color, Element, alignRight, el, fill, fillPortion, height, padding, rgb255, spacing, text, width)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
@@ -29,6 +29,7 @@ type alias Model =
     , playersRawText : String
     , openCard : Maybe String
     , openPlayer : Maybe String
+    , phase : GamePhase
     }
 
 
@@ -52,6 +53,12 @@ newCard =
     }
 
 
+type GamePhase
+    = Preparation
+    | Night
+    | Day
+
+
 type Msg
     = AddRoleButtonClick String
     | RemoveRoleButtonClick String
@@ -67,6 +74,7 @@ type Msg
     | RemoveTargetPlayer String String
     | KillPlayer String
     | RevivePlayer String
+    | SetPhase GamePhase
 
 
 init : Model
@@ -80,6 +88,7 @@ init =
     , playersRawText = ""
     , openCard = Nothing
     , openPlayer = Nothing
+    , phase = Preparation
     }
 
 
@@ -132,6 +141,9 @@ update msg model =
 
         RevivePlayer name ->
             { model | deadPlayers = Set.remove name model.deadPlayers }
+
+        SetPhase newPhase ->
+            { model | phase = newPhase }
 
 
 addCard : String -> Dict String CardInformation -> Dict String CardInformation
@@ -280,8 +292,13 @@ roleColor =
     rgb255 200 200 255
 
 
-shadedBackgroundColor : Color
-shadedBackgroundColor =
+lightShade : Color
+lightShade =
+    rgb255 240 240 240
+
+
+focusShade : Color
+focusShade =
     rgb255 230 230 230
 
 
@@ -307,22 +324,98 @@ view model =
 
 mainView : Model -> Element Msg
 mainView model =
-    Element.column [ spacing 20, padding 10, width fill ]
+    Element.column [ spacing 20, width fill ]
         [ Element.html FontAwesome.Styles.css
-        , gameSetupHeader model
-        , addCardsView (templateList model)
+        , phaseHeader model
+        , phaseView model
+        ]
+
+
+phaseView : Model -> Element Msg
+phaseView model =
+    Element.column [ spacing 20, padding 10, width fill ]
+        [ gameSetupHeader model
         , roleList model
         , playerSummary model
         ]
 
 
+phaseHeader : Model -> Element Msg
+phaseHeader model =
+    Element.row
+        [ width fill ]
+        [ phaseTab model Preparation
+        , phaseTab model Night
+        , phaseTab model Day
+        ]
+
+
+phaseTab : Model -> GamePhase -> Element Msg
+phaseTab model phase =
+    let
+        caption =
+            case phase of
+                Preparation ->
+                    "Vorbereitung"
+
+                Night ->
+                    "Nacht"
+
+                Day ->
+                    "Tag"
+
+        icon =
+            case phase of
+                Preparation ->
+                    Solid.cogs
+
+                Night ->
+                    Solid.moon
+
+                Day ->
+                    Solid.sun
+
+        isActive =
+            phase == model.phase
+
+        portion =
+            if isActive then
+                3
+
+            else
+                2
+
+        background =
+            if isActive then
+                focusShade
+
+            else
+                lightShade
+    in
+    Element.column
+        [ width (fillPortion portion)
+        , Background.color background
+        , padding 10
+        , spacing 10
+        , Events.onClick (SetPhase phase)
+        ]
+        [ el [ Element.centerX, Font.size <| fontScale 3 ] <| Element.html <| Icon.view icon
+        , el [ Element.centerX ] (text caption)
+        ]
+
+
 gameSetupHeader : Model -> Element Msg
 gameSetupHeader model =
-    Element.column [ width fill, spacing 10 ]
-        [ playerCountEditBox model
-        , playerDuplicationWarning model
-        , customRolesEditBox model
-        ]
+    if model.phase == Preparation then
+        Element.column [ width fill, spacing 10 ]
+            [ playerCountEditBox model
+            , playerDuplicationWarning model
+            , customRolesEditBox model
+            , addCardsView (templateList model)
+            ]
+
+    else
+        Element.none
 
 
 playerCountEditBox : Model -> Element Msg
@@ -388,7 +481,7 @@ buttonArray templates =
 roleButton : String -> Element Msg
 roleButton name =
     el
-        [ Background.color shadedBackgroundColor
+        [ Background.color lightShade
         , Border.rounded 5
         , padding 10
         , width fill
@@ -523,7 +616,7 @@ roleHeaderOpen name cardInfo =
 cardContent : Model -> String -> CardInformation -> Element Msg
 cardContent model name cardInfo =
     Element.column
-        [ Background.color shadedBackgroundColor
+        [ Background.color lightShade
         , width fill
         , height fill
         , padding 10
@@ -713,7 +806,7 @@ openPlayerBody model name =
     Element.column
         [ width fill
         , spacing 5
-        , Background.color shadedBackgroundColor
+        , Background.color lightShade
         , padding 10
         ]
         [ deadOrAliveSetting model name ]
