@@ -113,7 +113,7 @@ update msg model =
             setCustomRoles rawText model
 
         SelectCard identifier ->
-            { model | openCard = Just identifier }
+            selectCard identifier model
 
         CloseCard ->
             { model | openCard = Nothing }
@@ -212,6 +212,15 @@ parsePlayerNames rawText =
 setCustomRoles : String -> Model -> Model
 setCustomRoles rawText model =
     { model | customRoles = parsePlayerNames rawText, customRolesRawText = rawText }
+
+
+selectCard : String -> Model -> Model
+selectCard identifier model =
+    if openRolesAllowed model.phase then
+        { model | openCard = Just identifier }
+
+    else
+        model
 
 
 playerCount : Model -> Int
@@ -324,7 +333,7 @@ view model =
 
 mainView : Model -> Element Msg
 mainView model =
-    Element.column [ spacing 20, width fill ]
+    Element.column [ width fill ]
         [ Element.html FontAwesome.Styles.css
         , phaseHeader model
         , phaseView model
@@ -521,16 +530,29 @@ roleList model =
                 List.append specialCards [ additionalVillagers ]
     in
     Element.column [ spacing 10, width fill ] <|
-        allCards
+        (text "Spielerübersicht:" :: allCards)
 
 
 roleDescription : Model -> ( String, CardInformation ) -> Element Msg
 roleDescription model ( name, count ) =
-    if model.openCard == Just name then
+    if model.openCard == Just name && openRolesAllowed model.phase then
         cardOpenView model name count
 
     else
         roleDescriptionClosed model name count
+
+
+openRolesAllowed : GamePhase -> Bool
+openRolesAllowed phase =
+    case phase of
+        Preparation ->
+            True
+
+        Night ->
+            True
+
+        Day ->
+            False
 
 
 roleDescriptionClosed : Model -> String -> CardInformation -> Element Msg
@@ -545,12 +567,20 @@ roleDescriptionClosed model name cardInfo =
         Element.row
             [ spacing 5, width fill ]
             [ roleHeader model name cardInfo
-            , removeCardButton name
+            , removeCardButton model name
             ]
 
 
 roleHeader : Model -> String -> CardInformation -> Element Msg
 roleHeader model name cardInfo =
+    let
+        informationText =
+            if openRolesAllowed model.phase then
+                playerBadgeList model cardInfo
+
+            else
+                Element.none
+    in
     Element.row
         [ spacing 5
         , width fill
@@ -559,20 +589,24 @@ roleHeader model name cardInfo =
         ]
         [ text <| String.fromInt cardInfo.count
         , text name
-        , playerBadgeList model cardInfo
+        , informationText
         ]
 
 
-removeCardButton : String -> Element Msg
-removeCardButton template =
-    el
-        [ alignRight
-        , Events.onClick (RemoveRoleButtonClick template)
-        , Background.color (rgb255 255 200 200)
-        , height fill
-        , padding 10
-        ]
-        trashIcon
+removeCardButton : Model -> String -> Element Msg
+removeCardButton model template =
+    if model.phase == Preparation then
+        el
+            [ alignRight
+            , Events.onClick (RemoveRoleButtonClick template)
+            , Background.color (rgb255 255 200 200)
+            , height fill
+            , padding 10
+            ]
+            trashIcon
+
+    else
+        Element.none
 
 
 trashIcon : Element msg
@@ -588,16 +622,16 @@ cardOpenView model name cardInfo =
         , Border.width 1
         , width fill
         ]
-        [ cardHeaderOpen name cardInfo
+        [ cardHeaderOpen model name cardInfo
         , cardContent model name cardInfo
         ]
 
 
-cardHeaderOpen : String -> CardInformation -> Element Msg
-cardHeaderOpen name cardInfo =
+cardHeaderOpen : Model -> String -> CardInformation -> Element Msg
+cardHeaderOpen model name cardInfo =
     Element.row
         [ spacing 5, width fill ]
-        [ roleHeaderOpen name cardInfo, removeCardButton name ]
+        [ roleHeaderOpen name cardInfo, removeCardButton model name ]
 
 
 roleHeaderOpen : String -> CardInformation -> Element Msg
@@ -620,6 +654,7 @@ cardContent model name cardInfo =
         , width fill
         , height fill
         , padding 10
+        , spacing 10
         ]
         [ text "Spielerauswahl"
         , playerCardSelection model name cardInfo
@@ -723,7 +758,7 @@ badge : List (Element.Attribute msg) -> Element msg -> Element msg
 badge styles caption =
     el
         (List.append
-            [ Font.size <| fontScale -1
+            [ Font.size <| fontScale -2
             , Border.rounded 3
             , padding 4
             ]
@@ -764,9 +799,7 @@ playerSummary : Model -> Element Msg
 playerSummary model =
     Element.column
         [ width fill, spacing 5 ]
-    <|
-        text "Spielerübersicht:"
-            :: List.map (playerDetails model) model.players
+        (text "Spielerübersicht:" :: List.map (playerDetails model) model.players)
 
 
 playerDetails : Model -> String -> Element Msg
@@ -868,8 +901,15 @@ playerHeader model name =
 
             else
                 text targetDisplayTextGlue :: targeting
+
+        informationText =
+            if openRolesAllowed model.phase then
+                cardDisplay ++ targetingDisplay
+
+            else
+                []
     in
-    List.append (playerNameText model name :: cardDisplay) targetingDisplay
+    playerNameText model name :: informationText
 
 
 playerNameText : Model -> String -> Element msg
