@@ -555,7 +555,7 @@ roleList model =
                 List.append specialCards [ additionalVillagers ]
     in
     Element.column [ spacing 10, width fill ] <|
-        (text "Spielerübersicht:" :: allCards)
+        (text "Rollenübersicht:" :: allCards)
 
 
 roleDescription : Model -> ( String, CardInformation ) -> Element Msg
