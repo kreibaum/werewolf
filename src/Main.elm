@@ -151,16 +151,6 @@ cardCount model =
     List.sum <| List.map (\x -> x.count) <| Dict.values model.selected
 
 
-
--- setPlayerCount : String -> Model -> Model
--- setPlayerCount rawText model =
---     let
---         newPlayerCount =
---             String.toInt rawText |> Maybe.withDefault ()
---     in
---     { model | playerCount = newPlayerCount, playerCountRawText = rawText }
-
-
 setPlayerNames : String -> Model -> Model
 setPlayerNames rawText model =
     let
@@ -431,11 +421,6 @@ roleHeader model name cardInfo =
         , text name
         , playerBadgeList model cardInfo
         ]
-
-
-roleDescriptionLabelClosed : String -> Element Msg
-roleDescriptionLabelClosed name =
-    el [ Events.onClick (SelectCard name) ] (text name)
 
 
 removeCardButton : String -> Element Msg
