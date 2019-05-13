@@ -21,6 +21,8 @@ import Set exposing (Set)
 
 type alias Model =
     { templates : List String
+    , customRoles : List String
+    , customRolesRawText : String
     , selected : Dict String CardInformation
     , players : List String
     , deadPlayers : Set String
@@ -28,6 +30,11 @@ type alias Model =
     , openCard : Maybe String
     , openPlayer : Maybe String
     }
+
+
+templateList : Model -> List String
+templateList model =
+    model.templates ++ model.customRoles
 
 
 type alias CardInformation =
@@ -49,6 +56,7 @@ type Msg
     = AddRoleButtonClick String
     | RemoveRoleButtonClick String
     | TypePlayerNames String
+    | TypeCustomRoles String
     | SelectCard String
     | CloseCard
     | SelectPlayer String
@@ -64,6 +72,8 @@ type Msg
 init : Model
 init =
     { templates = [ "Amor", "Werwolf", "Seherin", "Hexe", "Seelenretter", "Vampir", "Jäger", "Fauli", "Mathematiker", "Gärtner" ]
+    , customRoles = []
+    , customRolesRawText = ""
     , selected = Dict.empty
     , players = [ "Ada", "Bert", "Carol", "Dave", "Esther", "Felix", "Greta" ]
     , deadPlayers = Set.empty
@@ -89,6 +99,9 @@ update msg model =
 
         TypePlayerNames rawText ->
             setPlayerNames rawText model
+
+        TypeCustomRoles rawText ->
+            setCustomRoles rawText model
 
         SelectCard identifier ->
             { model | openCard = Just identifier }
@@ -151,7 +164,11 @@ removeCard template dict =
 
 cardCount : Model -> Int
 cardCount model =
-    List.sum <| List.map (\x -> x.count) <| Dict.values model.selected
+    model.selected
+        |> Dict.filter (\name _ -> List.member name (templateList model))
+        |> Dict.values
+        |> List.map (\x -> x.count)
+        |> List.sum
 
 
 setPlayerNames : String -> Model -> Model
@@ -161,11 +178,11 @@ setPlayerNames rawText model =
             parsePlayerNames rawText
 
         newPlayers =
-            if List.length names > 0 then
-                names
+            if List.isEmpty names then
+                model.players
 
             else
-                model.players
+                names
     in
     { model | players = newPlayers, playersRawText = rawText }
 
@@ -176,6 +193,13 @@ parsePlayerNames rawText =
         |> String.split ","
         |> List.map String.trim
         |> List.filter (not << String.isEmpty)
+
+
+{-| Note that this is simpler than `setPlayerNames` as we allow an empty list.
+-}
+setCustomRoles : String -> Model -> Model
+setCustomRoles rawText model =
+    { model | customRoles = parsePlayerNames rawText, customRolesRawText = rawText }
 
 
 playerCount : Model -> Int
@@ -233,7 +257,7 @@ fontScale : Int -> Int
 fontScale factor =
     let
         base =
-            24
+            22
     in
     if factor > 0 then
         base * 1.25 ^ toFloat (factor - 1) |> round
@@ -286,7 +310,7 @@ mainView model =
     Element.column [ spacing 20, padding 10, width fill ]
         [ Element.html FontAwesome.Styles.css
         , gameSetupHeader model
-        , addCardsView model.templates
+        , addCardsView (templateList model)
         , roleList model
         , playerSummary model
         ]
@@ -297,6 +321,7 @@ gameSetupHeader model =
     Element.column [ width fill, spacing 10 ]
         [ playerCountEditBox model
         , playerDuplicationWarning model
+        , customRolesEditBox model
         ]
 
 
@@ -307,6 +332,24 @@ playerCountEditBox model =
         , text = model.playersRawText
         , placeholder = Just <| Input.placeholder [] <| text <| String.join ", " model.players
         , label = Input.labelAbove [] (text "Mitspieler: ")
+        }
+
+
+customRolesEditBox : Model -> Element Msg
+customRolesEditBox model =
+    let
+        placeholderText =
+            if List.isEmpty model.customRoles then
+                "Eigene Rollen eingeben"
+
+            else
+                String.join ", " model.customRoles
+    in
+    Input.text []
+        { onChange = TypeCustomRoles
+        , text = model.customRolesRawText
+        , placeholder = Just <| Input.placeholder [] <| text placeholderText
+        , label = Input.labelAbove [] (text "Rollen: ")
         }
 
 
@@ -358,7 +401,7 @@ roleList : Model -> Element Msg
 roleList model =
     let
         specialCards =
-            model.templates
+            templateList model
                 |> List.filterMap (\t -> Dict.getWithKey t model.selected)
                 |> List.map (roleDescription model)
 
@@ -703,7 +746,7 @@ playerHeader : Model -> String -> List (Element msg)
 playerHeader model name =
     let
         cards =
-            model.templates
+            templateList model
                 |> List.filterSet (cardsByPlayer model name)
                 |> List.map (text >> roleBadge)
 
@@ -722,7 +765,7 @@ playerHeader model name =
                 "und ist Ziel von"
 
         targeting =
-            model.templates
+            templateList model
                 |> List.filterSet (targetingCardsByPlayer model name)
                 |> List.map (text >> targetBadge)
 
