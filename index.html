@@ -4452,7 +4452,7 @@ var author$project$Main$init = {
 	s: elm$core$Set$empty,
 	ae: elm$core$Maybe$Nothing,
 	af: elm$core$Maybe$Nothing,
-	o: 0,
+	m: 0,
 	a: _List_fromArray(
 		['Ada', 'Bert', 'Carol', 'Dave', 'Esther', 'Felix', 'Greta']),
 	az: '',
@@ -5122,7 +5122,7 @@ var author$project$Main$openRolesAllowed = function (phase) {
 };
 var author$project$Main$selectCard = F2(
 	function (identifier, model) {
-		return author$project$Main$openRolesAllowed(model.o) ? _Utils_update(
+		return author$project$Main$openRolesAllowed(model.m) ? _Utils_update(
 			model,
 			{
 				ae: elm$core$Maybe$Just(identifier)
@@ -5378,7 +5378,7 @@ var author$project$Main$update = F2(
 				var newPhase = msg.a;
 				return _Utils_update(
 					model,
-					{o: newPhase});
+					{m: newPhase});
 			case 15:
 				return _Utils_update(
 					model,
@@ -11413,7 +11413,7 @@ var mdgriffith$elm_ui$Element$Font$size = function (i) {
 };
 var author$project$Main$phaseTab = F2(
 	function (model, phase) {
-		var isActive = _Utils_eq(phase, model.o);
+		var isActive = _Utils_eq(phase, model.m);
 		var portion = isActive ? 3 : 2;
 		var icon = function () {
 			switch (phase) {
@@ -12361,7 +12361,7 @@ var mdgriffith$elm_ui$Element$Input$textHelper = F3(
 								mdgriffith$elm_ui$Element$Input$value(textOptions.bG),
 								mdgriffith$elm_ui$Internal$Model$Attr(
 								elm$html$Html$Attributes$type_(inputType)),
-								mdgriffith$elm_ui$Element$Input$spellcheck(textInput.m),
+								mdgriffith$elm_ui$Element$Input$spellcheck(textInput.n),
 								mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.cE),
 								function () {
 								var _n2 = textInput.k;
@@ -12478,7 +12478,7 @@ var mdgriffith$elm_ui$Element$Input$textHelper = F3(
 					_Utils_ap(
 						_List_fromArray(
 							[
-								mdgriffith$elm_ui$Element$Input$spellcheck(textInput.m),
+								mdgriffith$elm_ui$Element$Input$spellcheck(textInput.n),
 								mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.cD),
 								A2(
 								elm$core$Maybe$withDefault,
@@ -12610,7 +12610,7 @@ var mdgriffith$elm_ui$Element$Input$textHelper = F3(
 var mdgriffith$elm_ui$Element$Input$text = mdgriffith$elm_ui$Element$Input$textHelper(
 	{
 		k: elm$core$Maybe$Nothing,
-		m: false,
+		n: false,
 		q: mdgriffith$elm_ui$Element$Input$TextInputNode('text')
 	});
 var author$project$Main$customRolesEditBox = function (model) {
@@ -12889,7 +12889,7 @@ var author$project$Main$templateList = function (model) {
 	return _Utils_ap(model.aT, model.T);
 };
 var author$project$Main$gameSetupHeader = function (model) {
-	return (!model.o) ? A2(
+	return (!model.m) ? A2(
 		mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
 			[
@@ -13044,7 +13044,7 @@ var author$project$Main$playerHeader = F2(
 			elm$core$List$cons,
 			mdgriffith$elm_ui$Element$text(targetDisplayTextGlue),
 			targeting);
-		var informationText = author$project$Main$openRolesAllowed(model.o) ? _Utils_ap(cardDisplay, targetingDisplay) : _List_Nil;
+		var informationText = author$project$Main$openRolesAllowed(model.m) ? _Utils_ap(cardDisplay, targetingDisplay) : _List_Nil;
 		return A2(
 			elm$core$List$cons,
 			A2(author$project$Main$playerNameText, model, name),
@@ -13547,7 +13547,7 @@ var author$project$Main$trashIcon = mdgriffith$elm_ui$Element$html(
 	lattyware$elm_fontawesome$FontAwesome$Icon$view(lattyware$elm_fontawesome$FontAwesome$Solid$trash));
 var author$project$Main$removeCardButton = F2(
 	function (model, template) {
-		return (!model.o) ? A2(
+		return (!model.m) ? A2(
 			mdgriffith$elm_ui$Element$el,
 			_List_fromArray(
 				[
@@ -13649,7 +13649,7 @@ var author$project$Main$playerBadgeList = F2(
 	});
 var author$project$Main$roleHeader = F3(
 	function (model, name, cardInfo) {
-		var informationText = author$project$Main$openRolesAllowed(model.o) ? A2(author$project$Main$playerBadgeList, model, cardInfo) : mdgriffith$elm_ui$Element$none;
+		var informationText = author$project$Main$openRolesAllowed(model.m) ? A2(author$project$Main$playerBadgeList, model, cardInfo) : mdgriffith$elm_ui$Element$none;
 		return A2(
 			mdgriffith$elm_ui$Element$row,
 			_List_fromArray(
@@ -13698,7 +13698,7 @@ var author$project$Main$roleDescription = F2(
 		var count = _n0.b;
 		return (_Utils_eq(
 			model.ae,
-			elm$core$Maybe$Just(name)) && author$project$Main$openRolesAllowed(model.o)) ? A3(author$project$Main$cardOpenView, model, name, count) : A3(author$project$Main$roleDescriptionClosed, model, name, count);
+			elm$core$Maybe$Just(name)) && author$project$Main$openRolesAllowed(model.m)) ? A3(author$project$Main$cardOpenView, model, name, count) : A3(author$project$Main$roleDescriptionClosed, model, name, count);
 	});
 var author$project$Main$roleList = function (model) {
 	var villagerCount = author$project$Main$playerCount(model) - author$project$Main$cardCount(model);
@@ -13727,7 +13727,7 @@ var author$project$Main$roleList = function (model) {
 			_Utils_update(
 				author$project$Main$newCard,
 				{l: villagerCount})));
-	var allCards = (villagerCount < 0) ? A2(
+	var allCards = ((villagerCount < 0) && (!model.m)) ? A2(
 		elm$core$List$append,
 		specialCards,
 		_List_fromArray(
@@ -13736,11 +13736,11 @@ var author$project$Main$roleList = function (model) {
 				author$project$Main$playerLimitBreached,
 				author$project$Main$playerCount(model),
 				author$project$Main$cardCount(model))
-			])) : ((!villagerCount) ? specialCards : A2(
+			])) : ((villagerCount > 0) ? A2(
 		elm$core$List$append,
 		specialCards,
 		_List_fromArray(
-			[additionalVillagers])));
+			[additionalVillagers])) : specialCards);
 	return A2(
 		mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
