@@ -545,14 +545,14 @@ roleList model =
                 (roleHeader model "Dorfbewohner" { newCard | count = villagerCount })
 
         allCards =
-            if villagerCount < 0 then
+            if villagerCount < 0 && model.phase == Preparation then
                 List.append specialCards [ playerLimitBreached (playerCount model) (cardCount model) ]
 
-            else if villagerCount == 0 then
-                specialCards
+            else if villagerCount > 0 then
+                List.append specialCards [ additionalVillagers ]
 
             else
-                List.append specialCards [ additionalVillagers ]
+                specialCards
     in
     Element.column [ spacing 10, width fill ] <|
         (text "Rollenübersicht:" :: allCards)
