@@ -14,6 +14,7 @@ import FontAwesome.Icon as Icon
 import FontAwesome.Solid as Solid
 import FontAwesome.Styles
 import Html exposing (Html)
+import List.Extra as List
 import ListHelper as List
 import Platform exposing (Program)
 import Set exposing (Set)
@@ -24,8 +25,7 @@ type alias Model =
     , customRoles : List String
     , customRolesRawText : String
     , selected : Dict String CardInformation
-    , players : List String
-    , deadPlayers : Set String
+    , players : List Player
     , playersRawText : String
     , openCard : Maybe String
     , openPlayer : Maybe String
@@ -52,6 +52,26 @@ newCard =
     , players = Set.empty
     , targetPlayers = Set.empty
     }
+
+
+type alias Player =
+    { name : String
+    , participation : Participation
+    }
+
+
+newPlayer : String -> Player
+newPlayer name =
+    { name = name
+    , participation = Alive
+    }
+
+
+{-| Yes, this type name isn't great but I don't know any other word that fits.
+-}
+type Participation
+    = Alive
+    | Dead
 
 
 type GamePhase
@@ -86,8 +106,9 @@ init =
     , customRoles = []
     , customRolesRawText = ""
     , selected = Dict.empty
-    , players = [ "Ada", "Bert", "Carol", "Dave", "Esther", "Felix", "Greta" ]
-    , deadPlayers = Set.empty
+    , players =
+        [ "Ada", "Bert", "Carol", "Dave", "Esther", "Felix", "Greta" ]
+            |> List.map newPlayer
     , playersRawText = ""
     , openCard = Nothing
     , openPlayer = Nothing
@@ -141,10 +162,10 @@ update msg model =
             removeTargetPlayer cardName playerName model
 
         KillPlayer name ->
-            { model | deadPlayers = Set.insert name model.deadPlayers }
+            { model | players = List.updateIf (\p -> p.name == name) killPlayer model.players }
 
         RevivePlayer name ->
-            { model | deadPlayers = Set.remove name model.deadPlayers }
+            { model | players = List.updateIf (\p -> p.name == name) revivePlayer model.players }
 
         SetPhase newPhase ->
             { model | phase = newPhase }
@@ -154,6 +175,16 @@ update msg model =
 
         DecreaseFontSize ->
             { model | uiScale = model.uiScale - 1 }
+
+
+killPlayer : Player -> Player
+killPlayer p =
+    { p | participation = Dead }
+
+
+revivePlayer : Player -> Player
+revivePlayer p =
+    { p | participation = Alive }
 
 
 addCard : String -> Dict String CardInformation -> Dict String CardInformation
@@ -204,7 +235,7 @@ setPlayerNames rawText model =
                 model.players
 
             else
-                names
+                names |> List.map newPlayer
     in
     { model | players = newPlayers, playersRawText = rawText }
 
@@ -457,7 +488,7 @@ playerCountEditBox model =
     Input.text []
         { onChange = TypePlayerNames
         , text = model.playersRawText
-        , placeholder = Just <| Input.placeholder [] <| text <| String.join ", " model.players
+        , placeholder = Just <| Input.placeholder [] <| text <| String.join ", " <| List.map .name model.players
         , label = Input.labelAbove [] (text "Mitspieler: ")
         }
 
@@ -485,7 +516,9 @@ playerDuplicationWarning model =
     let
         duplicates : List String
         duplicates =
-            List.findDuplicates model.players
+            model.players
+                |> List.map .name
+                |> List.findDuplicates
                 |> List.map (\( name, _ ) -> name)
 
         duplicateNames =
@@ -695,20 +728,20 @@ playerCardSelection model name cardInfo =
         |> Element.wrappedRow [ spacing 5 ]
 
 
-playerSelector : Model -> String -> CardInformation -> String -> Element Msg
-playerSelector model cardName cardInfo playerName =
+playerSelector : Model -> String -> CardInformation -> Player -> Element Msg
+playerSelector model cardName cardInfo player =
     let
         isAlreadySelected =
-            Set.member playerName cardInfo.players
+            Set.member player.name cardInfo.players
 
         event =
             if isAlreadySelected then
-                RemovePlayerFromRole cardName playerName
+                RemovePlayerFromRole cardName player.name
 
             else
-                AssignPlayerToRole cardName playerName
+                AssignPlayerToRole cardName player.name
     in
-    onOffButton roleColor isAlreadySelected (playerNameText model playerName) event
+    onOffButton roleColor isAlreadySelected (playerNameText player) event
 
 
 cardTargetSelection : Model -> String -> CardInformation -> Element Msg
@@ -718,20 +751,20 @@ cardTargetSelection model name cardInfo =
         |> Element.wrappedRow [ spacing 5 ]
 
 
-targetSelector : Model -> String -> CardInformation -> String -> Element Msg
-targetSelector model cardName cardInfo playerName =
+targetSelector : Model -> String -> CardInformation -> Player -> Element Msg
+targetSelector model cardName cardInfo player =
     let
         isAlreadySelected =
-            Set.member playerName cardInfo.targetPlayers
+            Set.member player.name cardInfo.targetPlayers
 
         event =
             if isAlreadySelected then
-                RemoveTargetPlayer cardName playerName
+                RemoveTargetPlayer cardName player.name
 
             else
-                TargetPlayer cardName playerName
+                TargetPlayer cardName player.name
     in
-    onOffButton targetColor isAlreadySelected (playerNameText model playerName) event
+    onOffButton targetColor isAlreadySelected (playerNameText player) event
 
 
 onOffButton : Color -> Bool -> Element Never -> Msg -> Element Msg
@@ -761,13 +794,13 @@ playerBadgeList model cardInfo =
     let
         selectedPlayers =
             model.players
-                |> List.filterSet cardInfo.players
-                |> List.map (playerNameText model >> roleBadge model)
+                |> List.filter (\p -> Set.member p.name cardInfo.players)
+                |> List.map (playerNameText >> roleBadge model)
 
         targetPlayers =
             model.players
-                |> List.filterSet cardInfo.targetPlayers
-                |> List.map (playerNameText model >> targetBadge model)
+                |> List.filter (\p -> Set.member p.name cardInfo.players)
+                |> List.map (playerNameText >> targetBadge model)
 
         entries =
             if List.isEmpty targetPlayers then
@@ -827,17 +860,17 @@ playerSummary model =
         (text "Spielerübersicht:" :: List.map (playerDetails model) model.players)
 
 
-playerDetails : Model -> String -> Element Msg
-playerDetails model name =
-    if model.openPlayer == Just name then
-        openPlayer model name
+playerDetails : Model -> Player -> Element Msg
+playerDetails model player =
+    if model.openPlayer == Just player.name then
+        openPlayer model player
 
     else
-        closedPlayer model name
+        closedPlayer model player
 
 
-openPlayer : Model -> String -> Element Msg
-openPlayer model name =
+openPlayer : Model -> Player -> Element Msg
+openPlayer model player =
     Element.column
         [ width fill
         , spacing 5
@@ -845,42 +878,43 @@ openPlayer model name =
         , Border.color hardBorderColor
         , Border.width 1
         ]
-        [ openPlayerHeader model name, openPlayerBody model name ]
+        [ openPlayerHeader model player, openPlayerBody model player ]
 
 
-openPlayerHeader : Model -> String -> Element Msg
-openPlayerHeader model name =
+openPlayerHeader : Model -> Player -> Element Msg
+openPlayerHeader model player =
     Element.row
         [ width fill
         , spacing 5
         , Events.onClick ClosePlayer
         , padding 10
         ]
-        (playerHeader model name)
+        (playerHeader model player)
 
 
-openPlayerBody : Model -> String -> Element Msg
-openPlayerBody model name =
+openPlayerBody : Model -> Player -> Element Msg
+openPlayerBody model player =
     Element.column
         [ width fill
         , spacing 5
         , Background.color lightShade
         , padding 10
         ]
-        [ deadOrAliveSetting model name ]
+        [ deadOrAliveSetting player ]
 
 
-deadOrAliveSetting : Model -> String -> Element Msg
-deadOrAliveSetting model name =
-    if Set.member name model.deadPlayers then
-        el [ Events.onClick (RevivePlayer name) ] (text "Wiederbeleben")
+deadOrAliveSetting : Player -> Element Msg
+deadOrAliveSetting player =
+    case player.participation of
+        Dead ->
+            el [ Events.onClick (RevivePlayer player.name) ] (text "Wiederbeleben")
 
-    else
-        el [ Events.onClick (KillPlayer name) ] (text "Töten")
+        Alive ->
+            el [ Events.onClick (KillPlayer player.name) ] (text "Töten")
 
 
-closedPlayer : Model -> String -> Element Msg
-closedPlayer model name =
+closedPlayer : Model -> Player -> Element Msg
+closedPlayer model player =
     Element.row
         [ width fill
         , spacing 5
@@ -888,17 +922,17 @@ closedPlayer model name =
         , Border.color hardBorderColor
         , Border.width 1
         , padding 10
-        , Events.onClick (SelectPlayer name)
+        , Events.onClick (SelectPlayer player.name)
         ]
-        (playerHeader model name)
+        (playerHeader model player)
 
 
-playerHeader : Model -> String -> List (Element msg)
-playerHeader model name =
+playerHeader : Model -> Player -> List (Element msg)
+playerHeader model player =
     let
         cards =
             templateList model
-                |> List.filterSet (cardsByPlayer model name)
+                |> List.filterSet (cardsByPlayer model player.name)
                 |> List.map (text >> roleBadge model)
 
         cardDisplay =
@@ -917,7 +951,7 @@ playerHeader model name =
 
         targeting =
             templateList model
-                |> List.filterSet (targetingCardsByPlayer model name)
+                |> List.filterSet (targetingCardsByPlayer model player.name)
                 |> List.map (text >> targetBadge model)
 
         targetingDisplay =
@@ -934,25 +968,27 @@ playerHeader model name =
             else
                 []
     in
-    playerNameText model name :: informationText
+    playerNameText player :: informationText
 
 
-playerNameText : Model -> String -> Element msg
-playerNameText model name =
+playerNameText : Player -> Element msg
+playerNameText player =
     let
         style =
-            if Set.member name model.deadPlayers then
-                [ Font.strike, spacing 5 ]
+            case player.participation of
+                Dead ->
+                    [ Font.strike, spacing 5 ]
 
-            else
-                [ spacing 5 ]
+                Alive ->
+                    [ spacing 5 ]
 
         content =
-            if Set.member name model.deadPlayers then
-                [ text name, deadIcon ]
+            case player.participation of
+                Dead ->
+                    [ text player.name, deadIcon ]
 
-            else
-                [ text name ]
+                Alive ->
+                    [ text player.name ]
     in
     Element.row style content
 
