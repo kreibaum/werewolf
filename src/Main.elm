@@ -11,6 +11,7 @@ import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import FontAwesome.Icon as Icon
+import FontAwesome.Regular as Regular
 import FontAwesome.Solid as Solid
 import FontAwesome.Styles
 import Html exposing (Html)
@@ -57,6 +58,7 @@ newCard =
 type alias Player =
     { name : String
     , participation : Participation
+    , note : String
     }
 
 
@@ -64,6 +66,7 @@ newPlayer : String -> Player
 newPlayer name =
     { name = name
     , participation = Alive
+    , note = ""
     }
 
 
@@ -98,6 +101,7 @@ type Msg
     | SetPhase GamePhase
     | IncreaseFontSize
     | DecreaseFontSize
+    | UpdatePlayerNote Player
 
 
 init : Model
@@ -175,6 +179,9 @@ update msg model =
 
         DecreaseFontSize ->
             { model | uiScale = model.uiScale - 1 }
+
+        UpdatePlayerNote player ->
+            { model | players = List.setIf (\p -> p.name == player.name) player model.players }
 
 
 killPlayer : Player -> Player
@@ -348,6 +355,11 @@ hardBorderColor =
 textColor : Color
 textColor =
     rgb255 0 0 0
+
+
+secondaryTextColor : Color
+secondaryTextColor =
+    rgb255 120 120 120
 
 
 view : Model -> Html Msg
@@ -724,12 +736,12 @@ cardContent model name cardInfo =
 playerCardSelection : Model -> String -> CardInformation -> Element Msg
 playerCardSelection model name cardInfo =
     model.players
-        |> List.map (playerSelector model name cardInfo)
+        |> List.map (playerSelector name cardInfo)
         |> Element.wrappedRow [ spacing 5 ]
 
 
-playerSelector : Model -> String -> CardInformation -> Player -> Element Msg
-playerSelector model cardName cardInfo player =
+playerSelector : String -> CardInformation -> Player -> Element Msg
+playerSelector cardName cardInfo player =
     let
         isAlreadySelected =
             Set.member player.name cardInfo.players
@@ -747,12 +759,12 @@ playerSelector model cardName cardInfo player =
 cardTargetSelection : Model -> String -> CardInformation -> Element Msg
 cardTargetSelection model name cardInfo =
     model.players
-        |> List.map (targetSelector model name cardInfo)
+        |> List.map (targetSelector name cardInfo)
         |> Element.wrappedRow [ spacing 5 ]
 
 
-targetSelector : Model -> String -> CardInformation -> Player -> Element Msg
-targetSelector model cardName cardInfo player =
+targetSelector : String -> CardInformation -> Player -> Element Msg
+targetSelector cardName cardInfo player =
     let
         isAlreadySelected =
             Set.member player.name cardInfo.targetPlayers
@@ -878,7 +890,7 @@ openPlayer model player =
         , Border.color hardBorderColor
         , Border.width 1
         ]
-        [ openPlayerHeader model player, openPlayerBody model player ]
+        [ openPlayerHeader model player, openPlayerBody player ]
 
 
 openPlayerHeader : Model -> Player -> Element Msg
@@ -892,15 +904,17 @@ openPlayerHeader model player =
         (playerHeader model player)
 
 
-openPlayerBody : Model -> Player -> Element Msg
-openPlayerBody model player =
+openPlayerBody : Player -> Element Msg
+openPlayerBody player =
     Element.column
         [ width fill
-        , spacing 5
+        , spacing 10
         , Background.color lightShade
         , padding 10
         ]
-        [ deadOrAliveSetting player ]
+        [ deadOrAliveSetting player
+        , noteEditor player
+        ]
 
 
 deadOrAliveSetting : Player -> Element Msg
@@ -911,6 +925,16 @@ deadOrAliveSetting player =
 
         Alive ->
             el [ Events.onClick (KillPlayer player.name) ] (text "Töten")
+
+
+noteEditor : Player -> Element Msg
+noteEditor player =
+    Input.text []
+        { onChange = \newNote -> UpdatePlayerNote { player | note = newNote }
+        , text = player.note
+        , placeholder = Just <| Input.placeholder [] <| text "Hier kannst du eine Notiz eingeben."
+        , label = Input.labelAbove [] (text "Notiz: ")
+        }
 
 
 closedPlayer : Model -> Player -> Element Msg
@@ -963,12 +987,32 @@ playerHeader model player =
 
         informationText =
             if openRolesAllowed model.phase then
-                cardDisplay ++ targetingDisplay
+                cardDisplay ++ targetingDisplay ++ [ playerNote player ]
 
             else
                 []
     in
     playerNameText player :: informationText
+
+
+playerNote : Player -> Element msg
+playerNote player =
+    if String.isEmpty player.note then
+        Element.none
+
+    else
+        Element.row
+            [ Font.color secondaryTextColor
+            , spacing 5
+            , alignRight
+            , Font.italic
+            ]
+            [ noteIcon, text player.note ]
+
+
+noteIcon : Element msg
+noteIcon =
+    el [] <| Element.html <| Icon.view Regular.stickyNote
 
 
 playerNameText : Player -> Element msg
