@@ -10,3 +10,5 @@ The strings are currently in german and will remain german until I implement pro
 ## Development
 
 This tool does not use a server and is written as an [Elm](https://elm-lang.org) single page app.
+
+Deployment to github-pages happens automatically via travis, see [Domenic Denicola's instructions](https://gist.github.com/domenic/ec8b0fc8ab45f39403dd).
