@@ -1,3 +1,4 @@
 elm-stuff/*
 vscode.code-workspace
 out/*
+static/elm.js

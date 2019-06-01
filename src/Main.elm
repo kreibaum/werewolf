@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Browser
+import Cache exposing (Cache, readCache)
 import Components exposing (uiArray)
 import Dict exposing (Dict)
 import DictHelper as Dict
@@ -15,6 +16,7 @@ import FontAwesome.Regular as Regular
 import FontAwesome.Solid as Solid
 import FontAwesome.Styles
 import Html exposing (Html)
+import Json.Encode exposing (Value)
 import List.Extra as List
 import ListHelper as List
 import Platform exposing (Program)
@@ -104,8 +106,24 @@ type Msg
     | UpdatePlayerNote Player
 
 
-init : Model
-init =
+init : Value -> ( Model, Cmd msg )
+init flags =
+    let
+        initialModel =
+            case readCache flags of
+                Ok cache ->
+                    applyCache cache defaultModel
+
+                Err _ ->
+                    defaultModel
+    in
+    ( initialModel
+    , Cmd.none
+    )
+
+
+defaultModel : Model
+defaultModel =
     { templates = [ "Amor", "Werwolf", "Seherin", "Hexe", "Seelenretter", "Vampir", "Jäger", "Fauli", "Mathematiker", "Gärtner" ]
     , customRoles = []
     , customRolesRawText = ""
@@ -121,9 +139,33 @@ init =
     }
 
 
-main : Program () Model Msg
+applyCache : Cache -> Model -> Model
+applyCache cache model =
+    { model | players = cache.names |> List.map newPlayer }
+
+
+main : Program Value Model Msg
 main =
-    Browser.sandbox { init = init, update = update, view = view }
+    Browser.element
+        { init = init
+        , update = updateWithCommand
+        , view = view
+        , subscriptions = \_ -> Sub.none
+        }
+
+
+updateWithCommand : Msg -> Model -> ( Model, Cmd msg )
+updateWithCommand msg model =
+    let
+        newModel =
+            update msg model
+
+        cacheCommand =
+            { names = newModel.players |> List.map .name }
+                |> Cache.writeCache
+                |> Cache.cachePort
+    in
+    ( newModel, cacheCommand )
 
 
 update : Msg -> Model -> Model
