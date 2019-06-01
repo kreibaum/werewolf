@@ -811,7 +811,7 @@ playerBadgeList model cardInfo =
 
         targetPlayers =
             model.players
-                |> List.filter (\p -> Set.member p.name cardInfo.players)
+                |> List.filter (\p -> Set.member p.name cardInfo.targetPlayers)
                 |> List.map (playerNameText >> targetBadge model)
 
         entries =
