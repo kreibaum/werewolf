@@ -122,9 +122,32 @@ init flags =
     )
 
 
+defaultRoles : List String
+defaultRoles =
+    [ "Zauberkünstler"
+    , "Amor"
+    , "Tom & Jerry"
+    , "Leichenfresser"
+    , "Prostituierte"
+    , "Werwolf"
+    , "Vampir"
+    , "Fallensteller"
+    , "Seherin"
+    , "Hexe"
+    , "Seelenretter"
+    , "Bibliothekar"
+    , "Jäger"
+    , "Fauli"
+    , "Mathematiker"
+    , "Henker"
+    , "Gärtner"
+    , "Lebensretter"
+    ]
+
+
 defaultModel : Model
 defaultModel =
-    { templates = [ "Amor", "Werwolf", "Seherin", "Hexe", "Seelenretter", "Vampir", "Jäger", "Fauli", "Mathematiker", "Gärtner" ]
+    { templates = defaultRoles
     , customRoles = []
     , customRolesRawText = ""
     , selected = Dict.empty
