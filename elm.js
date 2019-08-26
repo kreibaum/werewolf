@@ -4922,6 +4922,8 @@ var author$project$Main$applyCache = F2(
 			});
 	});
 var author$project$Main$Preparation = 0;
+var author$project$Main$defaultRoles = _List_fromArray(
+	['Zauberkünstler', 'Amor', 'Tom & Jerry', 'Leichenfresser', 'Prostituierte', 'Werwolf', 'Vampir', 'Fallensteller', 'Seherin', 'Hexe', 'Seelenretter', 'Bibliothekar', 'Jäger', 'Fauli', 'Mathematiker', 'Henker', 'Gärtner', 'Lebensretter']);
 var elm$core$Dict$RBEmpty_elm_builtin = {$: -2};
 var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
 var author$project$Main$defaultModel = {
@@ -4937,8 +4939,7 @@ var author$project$Main$defaultModel = {
 			['Ada', 'Bert', 'Carol', 'Dave', 'Esther', 'Felix', 'Greta'])),
 	aB: '',
 	d: elm$core$Dict$empty,
-	aY: _List_fromArray(
-		['Amor', 'Werwolf', 'Seherin', 'Hexe', 'Seelenretter', 'Vampir', 'Jäger', 'Fauli', 'Mathematiker', 'Gärtner']),
+	aY: author$project$Main$defaultRoles,
 	Q: 2
 };
 var elm$core$Platform$Cmd$batch = _Platform_batch;
