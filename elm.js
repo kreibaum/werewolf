@@ -4929,7 +4929,7 @@ var author$project$Main$defaultModel = {
 	av: '',
 	ag: elm$core$Maybe$Nothing,
 	ah: elm$core$Maybe$Nothing,
-	n: 0,
+	p: 0,
 	a: A2(
 		elm$core$List$map,
 		author$project$Main$newPlayer,
@@ -4939,7 +4939,7 @@ var author$project$Main$defaultModel = {
 	d: elm$core$Dict$empty,
 	aY: _List_fromArray(
 		['Amor', 'Werwolf', 'Seherin', 'Hexe', 'Seelenretter', 'Vampir', 'Jäger', 'Fauli', 'Mathematiker', 'Gärtner']),
-	Q: 0
+	Q: 2
 };
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
@@ -4993,7 +4993,7 @@ var author$project$Cache$writeCache = function (cache) {
 };
 var elm$core$Set$Set_elm_builtin = elm$core$Basics$identity;
 var elm$core$Set$empty = elm$core$Dict$empty;
-var author$project$Main$newCard = {m: 1, a: elm$core$Set$empty, w: elm$core$Set$empty};
+var author$project$Main$newCard = {n: 1, a: elm$core$Set$empty, w: elm$core$Set$empty};
 var elm$core$Basics$compare = _Utils_compare;
 var elm$core$Dict$get = F2(
 	function (targetKey, dict) {
@@ -5515,7 +5515,7 @@ var author$project$Main$addCard = F2(
 				return elm$core$Maybe$Just(
 					_Utils_update(
 						a,
-						{m: a.m + 1}));
+						{n: a.n + 1}));
 			} else {
 				return elm$core$Maybe$Just(author$project$Main$newCard);
 			}
@@ -5576,10 +5576,10 @@ var elm$core$Maybe$andThen = F2(
 var author$project$Main$removeCard = F2(
 	function (template, dict) {
 		var substract = function (cardInfo) {
-			return (cardInfo.m > 1) ? elm$core$Maybe$Just(
+			return (cardInfo.n > 1) ? elm$core$Maybe$Just(
 				_Utils_update(
 					cardInfo,
-					{m: cardInfo.m - 1})) : elm$core$Maybe$Nothing;
+					{n: cardInfo.n - 1})) : elm$core$Maybe$Nothing;
 		};
 		return A3(
 			elm$core$Dict$update,
@@ -5651,7 +5651,7 @@ var author$project$Main$openRolesAllowed = function (phase) {
 };
 var author$project$Main$selectCard = F2(
 	function (identifier, model) {
-		return author$project$Main$openRolesAllowed(model.n) ? _Utils_update(
+		return author$project$Main$openRolesAllowed(model.p) ? _Utils_update(
 			model,
 			{
 				ag: elm$core$Maybe$Just(identifier)
@@ -5840,7 +5840,7 @@ var author$project$Main$update = F2(
 				var newPhase = msg.a;
 				return _Utils_update(
 					model,
-					{n: newPhase});
+					{p: newPhase});
 			case 15:
 				return _Utils_update(
 					model,
@@ -11548,7 +11548,7 @@ var mdgriffith$elm_ui$Element$Font$size = function (i) {
 };
 var author$project$Main$phaseTab = F2(
 	function (model, phase) {
-		var isActive = _Utils_eq(phase, model.n);
+		var isActive = _Utils_eq(phase, model.p);
 		var portion = isActive ? 3 : 2;
 		var icon = function () {
 			switch (phase) {
@@ -11684,7 +11684,6 @@ var author$project$Components$uiArrayRow = function (entries) {
 		mdgriffith$elm_ui$Element$row,
 		_List_fromArray(
 			[
-				mdgriffith$elm_ui$Element$spacing(10),
 				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 			]),
 		entries);
@@ -11865,7 +11864,6 @@ var author$project$Components$uiArray = F2(
 			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
 				[
-					mdgriffith$elm_ui$Element$spacing(10),
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 				]),
 			A2(
@@ -11882,36 +11880,30 @@ var author$project$Components$uiArray = F2(
 var author$project$Main$AddRoleButtonClick = function (a) {
 	return {$: 0, a: a};
 };
-var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
-var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$borderRound,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Single,
-			'br-' + elm$core$String$fromInt(radius),
-			'border-radius',
-			elm$core$String$fromInt(radius) + 'px'));
+var elm$core$Basics$modBy = _Basics_modBy;
+var author$project$Main$listBackground = function (i) {
+	return (!A2(elm$core$Basics$modBy, 2, i)) ? A3(mdgriffith$elm_ui$Element$rgb255, 240, 240, 240) : A3(mdgriffith$elm_ui$Element$rgb255, 220, 220, 220);
 };
-var author$project$Main$roleButton = function (name) {
-	return A2(
-		mdgriffith$elm_ui$Element$el,
-		_List_fromArray(
-			[
-				mdgriffith$elm_ui$Element$Background$color(author$project$Main$lightShade),
-				mdgriffith$elm_ui$Element$Border$rounded(5),
-				mdgriffith$elm_ui$Element$padding(10),
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-				mdgriffith$elm_ui$Element$Events$onClick(
-				author$project$Main$AddRoleButtonClick(name))
-			]),
-		mdgriffith$elm_ui$Element$text(name));
-};
+var author$project$Main$roleButton = F2(
+	function (i, name) {
+		return A2(
+			mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$padding(15),
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+					mdgriffith$elm_ui$Element$Events$onClick(
+					author$project$Main$AddRoleButtonClick(name)),
+					mdgriffith$elm_ui$Element$Background$color(
+					author$project$Main$listBackground(i))
+				]),
+			mdgriffith$elm_ui$Element$text(name));
+	});
 var author$project$Main$buttonArray = function (templates) {
 	return A2(
 		author$project$Components$uiArray,
-		4,
-		A2(elm$core$List$map, author$project$Main$roleButton, templates));
+		3,
+		A2(elm$core$List$indexedMap, author$project$Main$roleButton, templates));
 };
 var author$project$Main$addCardsView = function (templates) {
 	return A2(
@@ -11923,7 +11915,14 @@ var author$project$Main$addCardsView = function (templates) {
 			]),
 		_List_fromArray(
 			[
-				mdgriffith$elm_ui$Element$text('Sonderrollen hinzufügen:'),
+				A2(
+				mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$padding(10),
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+					]),
+				mdgriffith$elm_ui$Element$text('Sonderrollen hinzufügen:')),
 				author$project$Main$buttonArray(templates)
 			]));
 };
@@ -12134,6 +12133,17 @@ var mdgriffith$elm_ui$Element$rgb = F3(
 		return A4(mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
 	});
 var mdgriffith$elm_ui$Element$Input$charcoal = A3(mdgriffith$elm_ui$Element$rgb, 136 / 255, 138 / 255, 133 / 255);
+var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
+var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$borderRound,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Single,
+			'br-' + elm$core$String$fromInt(radius),
+			'border-radius',
+			elm$core$String$fromInt(radius) + 'px'));
+};
 var mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
 	function (a, b, c, d, e) {
 		return {$: 6, a: a, b: b, c: c, d: d, e: e};
@@ -12494,7 +12504,7 @@ var mdgriffith$elm_ui$Element$Input$textHelper = F3(
 								mdgriffith$elm_ui$Element$Input$value(textOptions.aZ),
 								mdgriffith$elm_ui$Internal$Model$Attr(
 								elm$html$Html$Attributes$type_(inputType)),
-								mdgriffith$elm_ui$Element$Input$spellcheck(textInput.o),
+								mdgriffith$elm_ui$Element$Input$spellcheck(textInput.m),
 								mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.cH),
 								function () {
 								var _n2 = textInput.l;
@@ -12611,7 +12621,7 @@ var mdgriffith$elm_ui$Element$Input$textHelper = F3(
 					_Utils_ap(
 						_List_fromArray(
 							[
-								mdgriffith$elm_ui$Element$Input$spellcheck(textInput.o),
+								mdgriffith$elm_ui$Element$Input$spellcheck(textInput.m),
 								mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.cG),
 								A2(
 								elm$core$Maybe$withDefault,
@@ -12743,57 +12753,71 @@ var mdgriffith$elm_ui$Element$Input$textHelper = F3(
 var mdgriffith$elm_ui$Element$Input$text = mdgriffith$elm_ui$Element$Input$textHelper(
 	{
 		l: elm$core$Maybe$Nothing,
-		o: false,
+		m: false,
 		r: mdgriffith$elm_ui$Element$Input$TextInputNode('text')
 	});
 var author$project$Main$customRolesEditBox = function (model) {
 	var placeholderText = elm$core$List$isEmpty(model.U) ? 'Eigene Rollen eingeben' : A2(elm$core$String$join, ', ', model.U);
 	return A2(
-		mdgriffith$elm_ui$Element$Input$text,
-		_List_Nil,
-		{
-			aO: A2(
-				mdgriffith$elm_ui$Element$Input$labelAbove,
-				_List_Nil,
-				mdgriffith$elm_ui$Element$text('Rollen: ')),
-			aS: author$project$Main$TypeCustomRoles,
-			aT: elm$core$Maybe$Just(
-				A2(
-					mdgriffith$elm_ui$Element$Input$placeholder,
+		mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$padding(10),
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+			]),
+		A2(
+			mdgriffith$elm_ui$Element$Input$text,
+			_List_Nil,
+			{
+				aO: A2(
+					mdgriffith$elm_ui$Element$Input$labelAbove,
 					_List_Nil,
-					mdgriffith$elm_ui$Element$text(placeholderText))),
-			aZ: model.av
-		});
+					mdgriffith$elm_ui$Element$text('Rollen: ')),
+				aS: author$project$Main$TypeCustomRoles,
+				aT: elm$core$Maybe$Just(
+					A2(
+						mdgriffith$elm_ui$Element$Input$placeholder,
+						_List_Nil,
+						mdgriffith$elm_ui$Element$text(placeholderText))),
+				aZ: model.av
+			}));
 };
 var author$project$Main$TypePlayerNames = function (a) {
 	return {$: 2, a: a};
 };
 var author$project$Main$playerCountEditBox = function (model) {
 	return A2(
-		mdgriffith$elm_ui$Element$Input$text,
-		_List_Nil,
-		{
-			aO: A2(
-				mdgriffith$elm_ui$Element$Input$labelAbove,
-				_List_Nil,
-				mdgriffith$elm_ui$Element$text('Mitspieler: ')),
-			aS: author$project$Main$TypePlayerNames,
-			aT: elm$core$Maybe$Just(
-				A2(
-					mdgriffith$elm_ui$Element$Input$placeholder,
+		mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$padding(10),
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+			]),
+		A2(
+			mdgriffith$elm_ui$Element$Input$text,
+			_List_Nil,
+			{
+				aO: A2(
+					mdgriffith$elm_ui$Element$Input$labelAbove,
 					_List_Nil,
-					mdgriffith$elm_ui$Element$text(
-						A2(
-							elm$core$String$join,
-							', ',
+					mdgriffith$elm_ui$Element$text('Mitspieler: ')),
+				aS: author$project$Main$TypePlayerNames,
+				aT: elm$core$Maybe$Just(
+					A2(
+						mdgriffith$elm_ui$Element$Input$placeholder,
+						_List_Nil,
+						mdgriffith$elm_ui$Element$text(
 							A2(
-								elm$core$List$map,
-								function ($) {
-									return $.b;
-								},
-								model.a))))),
-			aZ: model.aB
-		});
+								elm$core$String$join,
+								', ',
+								A2(
+									elm$core$List$map,
+									function ($) {
+										return $.b;
+									},
+									model.a))))),
+				aZ: model.aB
+			}));
 };
 var author$project$DictHelper$getWithKey = F2(
 	function (key, dict) {
@@ -13000,7 +13024,8 @@ var author$project$Main$setupTitle = function (model) {
 		_List_fromArray(
 			[
 				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-				mdgriffith$elm_ui$Element$spacing(10)
+				mdgriffith$elm_ui$Element$spacing(10),
+				mdgriffith$elm_ui$Element$padding(10)
 			]),
 		_List_fromArray(
 			[
@@ -13036,7 +13061,7 @@ var author$project$Main$templateList = function (model) {
 	return _Utils_ap(model.aY, model.U);
 };
 var author$project$Main$gameSetupHeader = function (model) {
-	return (!model.n) ? A2(
+	return (!model.p) ? A2(
 		mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
 			[
@@ -13056,7 +13081,6 @@ var author$project$Main$gameSetupHeader = function (model) {
 var author$project$Main$SelectPlayer = function (a) {
 	return {$: 6, a: a};
 };
-var author$project$Main$hardBorderColor = A3(mdgriffith$elm_ui$Element$rgb255, 100, 100, 100);
 var author$project$ListHelper$filterSet = F2(
 	function (filter, list) {
 		return A2(
@@ -13228,7 +13252,7 @@ var author$project$Main$playerHeader = F2(
 			elm$core$List$cons,
 			mdgriffith$elm_ui$Element$text(targetDisplayTextGlue),
 			targeting);
-		var informationText = author$project$Main$openRolesAllowed(model.n) ? _Utils_ap(
+		var informationText = author$project$Main$openRolesAllowed(model.p) ? _Utils_ap(
 			cardDisplay,
 			_Utils_ap(
 				targetingDisplay,
@@ -13241,23 +13265,23 @@ var author$project$Main$playerHeader = F2(
 			author$project$Main$playerNameText(player),
 			informationText);
 	});
-var author$project$Main$closedPlayer = F2(
-	function (model, player) {
+var author$project$Main$closedPlayer = F3(
+	function (model, i, player) {
 		return A2(
 			mdgriffith$elm_ui$Element$row,
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 					mdgriffith$elm_ui$Element$spacing(5),
-					mdgriffith$elm_ui$Element$Border$rounded(5),
-					mdgriffith$elm_ui$Element$Border$color(author$project$Main$hardBorderColor),
-					mdgriffith$elm_ui$Element$Border$width(1),
-					mdgriffith$elm_ui$Element$padding(10),
+					mdgriffith$elm_ui$Element$padding(15),
+					mdgriffith$elm_ui$Element$Background$color(
+					author$project$Main$listBackground(i)),
 					mdgriffith$elm_ui$Element$Events$onClick(
 					author$project$Main$SelectPlayer(player.b))
 				]),
 			A2(author$project$Main$playerHeader, model, player));
 	});
+var author$project$Main$hardBorderColor = A3(mdgriffith$elm_ui$Element$rgb255, 100, 100, 100);
 var author$project$Main$KillPlayer = function (a) {
 	return {$: 12, a: a};
 };
@@ -13319,8 +13343,7 @@ var author$project$Main$openPlayerBody = function (player) {
 			[
 				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 				mdgriffith$elm_ui$Element$spacing(10),
-				mdgriffith$elm_ui$Element$Background$color(author$project$Main$lightShade),
-				mdgriffith$elm_ui$Element$padding(10)
+				mdgriffith$elm_ui$Element$padding(15)
 			]),
 		_List_fromArray(
 			[
@@ -13338,21 +13361,22 @@ var author$project$Main$openPlayerHeader = F2(
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 					mdgriffith$elm_ui$Element$spacing(5),
 					mdgriffith$elm_ui$Element$Events$onClick(author$project$Main$ClosePlayer),
-					mdgriffith$elm_ui$Element$padding(10)
+					mdgriffith$elm_ui$Element$padding(15)
 				]),
 			A2(author$project$Main$playerHeader, model, player));
 	});
-var author$project$Main$openPlayer = F2(
-	function (model, player) {
+var author$project$Main$openPlayer = F3(
+	function (model, i, player) {
 		return A2(
 			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 					mdgriffith$elm_ui$Element$spacing(5),
-					mdgriffith$elm_ui$Element$Border$rounded(5),
 					mdgriffith$elm_ui$Element$Border$color(author$project$Main$hardBorderColor),
-					mdgriffith$elm_ui$Element$Border$width(1)
+					mdgriffith$elm_ui$Element$Border$width(1),
+					mdgriffith$elm_ui$Element$Background$color(
+					author$project$Main$listBackground(i))
 				]),
 			_List_fromArray(
 				[
@@ -13360,25 +13384,31 @@ var author$project$Main$openPlayer = F2(
 					author$project$Main$openPlayerBody(player)
 				]));
 	});
-var author$project$Main$playerDetails = F2(
-	function (model, player) {
+var author$project$Main$playerDetails = F3(
+	function (model, i, player) {
 		return _Utils_eq(
 			model.ah,
-			elm$core$Maybe$Just(player.b)) ? A2(author$project$Main$openPlayer, model, player) : A2(author$project$Main$closedPlayer, model, player);
+			elm$core$Maybe$Just(player.b)) ? A3(author$project$Main$openPlayer, model, i, player) : A3(author$project$Main$closedPlayer, model, i, player);
 	});
 var author$project$Main$playerSummary = function (model) {
 	return A2(
 		mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
 			[
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-				mdgriffith$elm_ui$Element$spacing(5)
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 			]),
 		A2(
 			elm$core$List$cons,
-			mdgriffith$elm_ui$Element$text('Spielerübersicht:'),
 			A2(
-				elm$core$List$map,
+				mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$padding(10),
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+					]),
+				mdgriffith$elm_ui$Element$text('Spielerübersicht:')),
+			A2(
+				elm$core$List$indexedMap,
 				author$project$Main$playerDetails(model),
 				model.a)));
 };
@@ -13409,7 +13439,7 @@ var author$project$Main$cardCount = function (model) {
 		A2(
 			elm$core$List$map,
 			function (x) {
-				return x.m;
+				return x.n;
 			},
 			elm$core$Dict$values(
 				A2(
@@ -13426,21 +13456,6 @@ var author$project$Main$cardCount = function (model) {
 var author$project$Main$playerCount = function (model) {
 	return elm$core$List$length(model.a);
 };
-var author$project$Main$playerLimitBreached = F2(
-	function (expected, actual) {
-		return A2(
-			mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$Border$rounded(5),
-					mdgriffith$elm_ui$Element$Border$color(author$project$Main$hardBorderColor),
-					mdgriffith$elm_ui$Element$Border$width(1),
-					mdgriffith$elm_ui$Element$padding(10),
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
-				]),
-			mdgriffith$elm_ui$Element$text(
-				'Achtung, du hast ' + (elm$core$String$fromInt(actual) + (' Karten auf ' + (elm$core$String$fromInt(expected) + ' Spieler verteilt!')))));
-	});
 var author$project$Main$RemoveTargetPlayer = F2(
 	function (a, b) {
 		return {$: 11, a: a, b: b};
@@ -13505,7 +13520,6 @@ var author$project$Main$onOffButton = F4(
 			selectionStyle,
 			_List_fromArray(
 				[
-					mdgriffith$elm_ui$Element$Border$rounded(5),
 					mdgriffith$elm_ui$Element$padding(7),
 					mdgriffith$elm_ui$Element$Events$onClick(event)
 				]));
@@ -13746,10 +13760,9 @@ var author$project$Main$cardContent = F3(
 			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
 				[
-					mdgriffith$elm_ui$Element$Background$color(author$project$Main$lightShade),
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$padding(10),
+					mdgriffith$elm_ui$Element$padding(15),
 					mdgriffith$elm_ui$Element$spacing(10)
 				]),
 			_List_fromArray(
@@ -13763,24 +13776,24 @@ var author$project$Main$cardContent = F3(
 var author$project$Main$RemoveRoleButtonClick = function (a) {
 	return {$: 1, a: a};
 };
-var lattyware$elm_fontawesome$FontAwesome$Solid$trash = A5(lattyware$elm_fontawesome$FontAwesome$Icon$Icon, 'fas', 'trash', 448, 512, 'M432 32H312l-9.4-18.7A24 24 0 0 0 281.1 0H166.8a23.72 23.72 0 0 0-21.4 13.3L136 32H16A16 16 0 0 0 0 48v32a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16V48a16 16 0 0 0-16-16zM53.2 467a48 48 0 0 0 47.9 45h245.8a48 48 0 0 0 47.9-45L416 128H32z');
-var author$project$Main$trashIcon = mdgriffith$elm_ui$Element$html(
-	lattyware$elm_fontawesome$FontAwesome$Icon$view(lattyware$elm_fontawesome$FontAwesome$Solid$trash));
+var lattyware$elm_fontawesome$FontAwesome$Solid$minusSquare = A5(lattyware$elm_fontawesome$FontAwesome$Icon$Icon, 'fas', 'minus-square', 448, 512, 'M400 32H48C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48zM92 296c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h264c6.6 0 12 5.4 12 12v56c0 6.6-5.4 12-12 12H92z');
+var author$project$Main$removeCardIcon = mdgriffith$elm_ui$Element$html(
+	lattyware$elm_fontawesome$FontAwesome$Icon$view(lattyware$elm_fontawesome$FontAwesome$Solid$minusSquare));
 var author$project$Main$removeCardButton = F2(
 	function (model, template) {
-		return (!model.n) ? A2(
+		return (!model.p) ? A2(
 			mdgriffith$elm_ui$Element$el,
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$alignRight,
 					mdgriffith$elm_ui$Element$Events$onClick(
 					author$project$Main$RemoveRoleButtonClick(template)),
-					mdgriffith$elm_ui$Element$Background$color(
-					A3(mdgriffith$elm_ui$Element$rgb255, 255, 200, 200)),
+					mdgriffith$elm_ui$Element$Font$color(
+					A3(mdgriffith$elm_ui$Element$rgb255, 200, 0, 0)),
 					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
 					mdgriffith$elm_ui$Element$padding(10)
 				]),
-			author$project$Main$trashIcon) : mdgriffith$elm_ui$Element$none;
+			author$project$Main$removeCardIcon) : mdgriffith$elm_ui$Element$none;
 	});
 var author$project$Main$CloseCard = {$: 5};
 var author$project$Main$roleHeaderOpen = F2(
@@ -13791,13 +13804,13 @@ var author$project$Main$roleHeaderOpen = F2(
 				[
 					mdgriffith$elm_ui$Element$spacing(5),
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$padding(10),
+					mdgriffith$elm_ui$Element$padding(15),
 					mdgriffith$elm_ui$Element$Events$onClick(author$project$Main$CloseCard)
 				]),
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$text(
-					elm$core$String$fromInt(cardInfo.m)),
+					elm$core$String$fromInt(cardInfo.n)),
 					mdgriffith$elm_ui$Element$text(name)
 				]));
 	});
@@ -13816,16 +13829,17 @@ var author$project$Main$cardHeaderOpen = F3(
 					A2(author$project$Main$removeCardButton, model, name)
 				]));
 	});
-var author$project$Main$cardOpenView = F3(
-	function (model, name, cardInfo) {
+var author$project$Main$cardOpenView = F4(
+	function (model, i, name, cardInfo) {
 		return A2(
 			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
 				[
-					mdgriffith$elm_ui$Element$Border$rounded(5),
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+					mdgriffith$elm_ui$Element$Background$color(
+					author$project$Main$listBackground(i)),
 					mdgriffith$elm_ui$Element$Border$color(author$project$Main$hardBorderColor),
-					mdgriffith$elm_ui$Element$Border$width(1),
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+					mdgriffith$elm_ui$Element$Border$width(1)
 				]),
 			_List_fromArray(
 				[
@@ -13880,35 +13894,34 @@ var author$project$Main$playerBadgeList = F2(
 	});
 var author$project$Main$roleHeader = F3(
 	function (model, name, cardInfo) {
-		var informationText = author$project$Main$openRolesAllowed(model.n) ? A2(author$project$Main$playerBadgeList, model, cardInfo) : mdgriffith$elm_ui$Element$none;
+		var informationText = author$project$Main$openRolesAllowed(model.p) ? A2(author$project$Main$playerBadgeList, model, cardInfo) : mdgriffith$elm_ui$Element$none;
 		return A2(
 			mdgriffith$elm_ui$Element$row,
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$spacing(5),
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$padding(10),
+					mdgriffith$elm_ui$Element$padding(15),
 					mdgriffith$elm_ui$Element$Events$onClick(
 					author$project$Main$SelectCard(name))
 				]),
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$text(
-					elm$core$String$fromInt(cardInfo.m)),
+					elm$core$String$fromInt(cardInfo.n)),
 					mdgriffith$elm_ui$Element$text(name),
 					informationText
 				]));
 	});
-var author$project$Main$roleDescriptionClosed = F3(
-	function (model, name, cardInfo) {
+var author$project$Main$roleDescriptionClosed = F4(
+	function (model, i, name, cardInfo) {
 		return A2(
 			mdgriffith$elm_ui$Element$el,
 			_List_fromArray(
 				[
-					mdgriffith$elm_ui$Element$Border$rounded(5),
-					mdgriffith$elm_ui$Element$Border$color(author$project$Main$hardBorderColor),
-					mdgriffith$elm_ui$Element$Border$width(1),
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+					mdgriffith$elm_ui$Element$Background$color(
+					author$project$Main$listBackground(i))
 				]),
 			A2(
 				mdgriffith$elm_ui$Element$row,
@@ -13923,18 +13936,17 @@ var author$project$Main$roleDescriptionClosed = F3(
 						A2(author$project$Main$removeCardButton, model, name)
 					])));
 	});
-var author$project$Main$roleDescription = F2(
-	function (model, _n0) {
+var author$project$Main$roleDescription = F3(
+	function (model, i, _n0) {
 		var name = _n0.a;
 		var count = _n0.b;
 		return (_Utils_eq(
 			model.ag,
-			elm$core$Maybe$Just(name)) && author$project$Main$openRolesAllowed(model.n)) ? A3(author$project$Main$cardOpenView, model, name, count) : A3(author$project$Main$roleDescriptionClosed, model, name, count);
+			elm$core$Maybe$Just(name)) && author$project$Main$openRolesAllowed(model.p)) ? A4(author$project$Main$cardOpenView, model, i, name, count) : A4(author$project$Main$roleDescriptionClosed, model, i, name, count);
 	});
 var author$project$Main$roleList = function (model) {
-	var villagerCount = author$project$Main$playerCount(model) - author$project$Main$cardCount(model);
 	var specialCards = A2(
-		elm$core$List$map,
+		elm$core$List$indexedMap,
 		author$project$Main$roleDescription(model),
 		A2(
 			elm$core$List$filterMap,
@@ -13942,47 +13954,47 @@ var author$project$Main$roleList = function (model) {
 				return A2(author$project$DictHelper$getWithKey, t, model.d);
 			},
 			author$project$Main$templateList(model)));
-	var additionalVillagers = A2(
-		mdgriffith$elm_ui$Element$el,
+	var playerCountText = A2(
+		elm$core$String$join,
+		'',
 		_List_fromArray(
 			[
-				mdgriffith$elm_ui$Element$Border$rounded(5),
-				mdgriffith$elm_ui$Element$Border$color(author$project$Main$hardBorderColor),
-				mdgriffith$elm_ui$Element$Border$width(1),
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
-			]),
-		A3(
-			author$project$Main$roleHeader,
-			model,
-			'Dorfbewohner',
-			_Utils_update(
-				author$project$Main$newCard,
-				{m: villagerCount})));
-	var allCards = ((villagerCount < 0) && (!model.n)) ? A2(
-		elm$core$List$append,
-		specialCards,
-		_List_fromArray(
-			[
-				A2(
-				author$project$Main$playerLimitBreached,
-				author$project$Main$playerCount(model),
-				author$project$Main$cardCount(model))
-			])) : ((villagerCount > 0) ? A2(
-		elm$core$List$append,
-		specialCards,
-		_List_fromArray(
-			[additionalVillagers])) : specialCards);
+				'(Spieler: ',
+				elm$core$String$fromInt(
+				author$project$Main$playerCount(model)),
+				', Rollen: ',
+				elm$core$String$fromInt(
+				author$project$Main$cardCount(model)),
+				')'
+			]));
 	return A2(
 		mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
 			[
-				mdgriffith$elm_ui$Element$spacing(10),
 				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 			]),
 		A2(
 			elm$core$List$cons,
-			mdgriffith$elm_ui$Element$text('Rollenübersicht:'),
-			allCards));
+			A2(
+				mdgriffith$elm_ui$Element$row,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$padding(10),
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+						mdgriffith$elm_ui$Element$spacing(5)
+					]),
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$text('Rollenübersicht:'),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$Font$color(author$project$Main$secondaryTextColor)
+							]),
+						mdgriffith$elm_ui$Element$text(playerCountText))
+					])),
+			specialCards));
 };
 var author$project$Main$phaseView = function (model) {
 	return A2(
@@ -13990,7 +14002,6 @@ var author$project$Main$phaseView = function (model) {
 		_List_fromArray(
 			[
 				mdgriffith$elm_ui$Element$spacing(20),
-				mdgriffith$elm_ui$Element$padding(10),
 				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 			]),
 		_List_fromArray(
