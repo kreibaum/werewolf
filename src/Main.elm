@@ -135,7 +135,7 @@ defaultModel =
     , openCard = Nothing
     , openPlayer = Nothing
     , phase = Preparation
-    , uiScale = 0
+    , uiScale = 2
     }
 
 
@@ -404,6 +404,15 @@ secondaryTextColor =
     rgb255 120 120 120
 
 
+listBackground : Int -> Color
+listBackground i =
+    if modBy 2 i == 0 then
+        rgb255 240 240 240
+
+    else
+        rgb255 220 220 220
+
+
 view : Model -> Html Msg
 view model =
     Element.layout
@@ -425,7 +434,7 @@ mainView model =
 
 phaseView : Model -> Element Msg
 phaseView model =
-    Element.column [ spacing 20, padding 10, width fill ]
+    Element.column [ spacing 20, width fill ]
         [ gameSetupHeader model
         , roleList model
         , playerSummary model
@@ -514,7 +523,7 @@ gameSetupHeader model =
 setupTitle : Model -> Element Msg
 setupTitle model =
     Element.row
-        [ width fill, spacing 10 ]
+        [ width fill, spacing 10, padding 10 ]
         [ el [ Font.size <| fontScale model 6 ] (text "Werwolf Klemmbrett")
         , zoomButton model [ Events.onClick IncreaseFontSize ] (Element.html <| Icon.view Solid.searchPlus)
         , zoomButton model [ Events.onClick DecreaseFontSize ] (Element.html <| Icon.view Solid.searchMinus)
@@ -539,12 +548,14 @@ zoomButton model styles caption =
 
 playerCountEditBox : Model -> Element Msg
 playerCountEditBox model =
-    Input.text []
-        { onChange = TypePlayerNames
-        , text = model.playersRawText
-        , placeholder = Just <| Input.placeholder [] <| text <| String.join ", " <| List.map .name model.players
-        , label = Input.labelAbove [] (text "Mitspieler: ")
-        }
+    Element.el [ padding 10, width fill ]
+        (Input.text []
+            { onChange = TypePlayerNames
+            , text = model.playersRawText
+            , placeholder = Just <| Input.placeholder [] <| text <| String.join ", " <| List.map .name model.players
+            , label = Input.labelAbove [] (text "Mitspieler: ")
+            }
+        )
 
 
 customRolesEditBox : Model -> Element Msg
@@ -557,12 +568,14 @@ customRolesEditBox model =
             else
                 String.join ", " model.customRoles
     in
-    Input.text []
-        { onChange = TypeCustomRoles
-        , text = model.customRolesRawText
-        , placeholder = Just <| Input.placeholder [] <| text placeholderText
-        , label = Input.labelAbove [] (text "Rollen: ")
-        }
+    Element.el [ padding 10, width fill ]
+        (Input.text []
+            { onChange = TypeCustomRoles
+            , text = model.customRolesRawText
+            , placeholder = Just <| Input.placeholder [] <| text placeholderText
+            , label = Input.labelAbove [] (text "Rollen: ")
+            }
+        )
 
 
 playerDuplicationWarning : Model -> Element msg
@@ -588,25 +601,24 @@ playerDuplicationWarning model =
 addCardsView : List String -> Element Msg
 addCardsView templates =
     Element.column [ width fill, spacing 5 ]
-        [ text "Sonderrollen hinzufügen:"
+        [ Element.el [ padding 10, width fill ] (text "Sonderrollen hinzufügen:")
         , buttonArray templates
         ]
 
 
 buttonArray : List String -> Element Msg
 buttonArray templates =
-    uiArray 4
-        (List.map roleButton templates)
+    uiArray 3
+        (List.indexedMap roleButton templates)
 
 
-roleButton : String -> Element Msg
-roleButton name =
+roleButton : Int -> String -> Element Msg
+roleButton i name =
     el
-        [ Background.color lightShade
-        , Border.rounded 5
-        , padding 10
+        [ padding 15
         , width fill
         , Events.onClick (AddRoleButtonClick name)
+        , Background.color (listBackground i)
         ]
         (text name)
 
@@ -617,41 +629,33 @@ roleList model =
         specialCards =
             templateList model
                 |> List.filterMap (\t -> Dict.getWithKey t model.selected)
-                |> List.map (roleDescription model)
+                |> List.indexedMap (roleDescription model)
 
-        villagerCount =
-            playerCount model - cardCount model
-
-        additionalVillagers =
-            el
-                [ Border.rounded 5
-                , Border.color hardBorderColor
-                , Border.width 1
-                , width fill
+        playerCountText =
+            String.join ""
+                [ "(Spieler: "
+                , String.fromInt (playerCount model)
+                , ", Rollen: "
+                , String.fromInt (cardCount model)
+                , ")"
                 ]
-                (roleHeader model "Dorfbewohner" { newCard | count = villagerCount })
-
-        allCards =
-            if villagerCount < 0 && model.phase == Preparation then
-                List.append specialCards [ playerLimitBreached (playerCount model) (cardCount model) ]
-
-            else if villagerCount > 0 then
-                List.append specialCards [ additionalVillagers ]
-
-            else
-                specialCards
     in
-    Element.column [ spacing 10, width fill ] <|
-        (text "Rollenübersicht:" :: allCards)
+    Element.column [ width fill ] <|
+        (Element.row [ padding 10, width fill, spacing 5 ]
+            [ text "Rollenübersicht:"
+            , Element.el [ Font.color secondaryTextColor ] (text playerCountText)
+            ]
+            :: specialCards
+        )
 
 
-roleDescription : Model -> ( String, CardInformation ) -> Element Msg
-roleDescription model ( name, count ) =
+roleDescription : Model -> Int -> ( String, CardInformation ) -> Element Msg
+roleDescription model i ( name, count ) =
     if model.openCard == Just name && openRolesAllowed model.phase then
-        cardOpenView model name count
+        cardOpenView model i name count
 
     else
-        roleDescriptionClosed model name count
+        roleDescriptionClosed model i name count
 
 
 openRolesAllowed : GamePhase -> Bool
@@ -667,13 +671,11 @@ openRolesAllowed phase =
             False
 
 
-roleDescriptionClosed : Model -> String -> CardInformation -> Element Msg
-roleDescriptionClosed model name cardInfo =
+roleDescriptionClosed : Model -> Int -> String -> CardInformation -> Element Msg
+roleDescriptionClosed model i name cardInfo =
     el
-        [ Border.rounded 5
-        , Border.color hardBorderColor
-        , Border.width 1
-        , width fill
+        [ width fill
+        , Background.color (listBackground i)
         ]
     <|
         Element.row
@@ -696,7 +698,7 @@ roleHeader model name cardInfo =
     Element.row
         [ spacing 5
         , width fill
-        , padding 10
+        , padding 15
         , Events.onClick (SelectCard name)
         ]
         [ text <| String.fromInt cardInfo.count
@@ -711,28 +713,28 @@ removeCardButton model template =
         el
             [ alignRight
             , Events.onClick (RemoveRoleButtonClick template)
-            , Background.color (rgb255 255 200 200)
+            , Font.color (rgb255 200 0 0)
             , height fill
             , padding 10
             ]
-            trashIcon
+            removeCardIcon
 
     else
         Element.none
 
 
-trashIcon : Element msg
-trashIcon =
-    Element.html <| Icon.view Solid.trash
+removeCardIcon : Element msg
+removeCardIcon =
+    Element.html <| Icon.view Solid.minusSquare
 
 
-cardOpenView : Model -> String -> CardInformation -> Element Msg
-cardOpenView model name cardInfo =
+cardOpenView : Model -> Int -> String -> CardInformation -> Element Msg
+cardOpenView model i name cardInfo =
     Element.column
-        [ Border.rounded 5
+        [ width fill
+        , Background.color (listBackground i)
         , Border.color hardBorderColor
         , Border.width 1
-        , width fill
         ]
         [ cardHeaderOpen model name cardInfo
         , cardContent model name cardInfo
@@ -751,7 +753,7 @@ roleHeaderOpen name cardInfo =
     Element.row
         [ spacing 5
         , width fill
-        , padding 10
+        , padding 15
         , Events.onClick CloseCard
         ]
         [ text <| String.fromInt cardInfo.count
@@ -762,10 +764,9 @@ roleHeaderOpen name cardInfo =
 cardContent : Model -> String -> CardInformation -> Element Msg
 cardContent model name cardInfo =
     Element.column
-        [ Background.color lightShade
-        , width fill
+        [ width fill
         , height fill
-        , padding 10
+        , padding 15
         , spacing 10
         ]
         [ text "Spielerauswahl"
@@ -835,8 +836,7 @@ onOffButton color isSelected caption event =
 
         styles =
             List.append selectionStyle
-                [ Border.rounded 5
-                , padding 7
+                [ padding 7
                 , Events.onClick event
                 ]
     in
@@ -889,48 +889,33 @@ targetBadge model caption =
     badge model [ Background.color targetColor ] caption
 
 
-playerLimitBreached : Int -> Int -> Element msg
-playerLimitBreached expected actual =
-    el
-        [ Border.rounded 5
-        , Border.color hardBorderColor
-        , Border.width 1
-        , padding 10
-        , width fill
-        ]
-        (text <|
-            "Achtung, du hast "
-                ++ String.fromInt actual
-                ++ " Karten auf "
-                ++ String.fromInt expected
-                ++ " Spieler verteilt!"
-        )
-
-
 playerSummary : Model -> Element Msg
 playerSummary model =
     Element.column
-        [ width fill, spacing 5 ]
-        (text "Spielerübersicht:" :: List.map (playerDetails model) model.players)
+        [ width fill ]
+        (Element.el [ padding 10, width fill ]
+            (text "Spielerübersicht:")
+            :: List.indexedMap (playerDetails model) model.players
+        )
 
 
-playerDetails : Model -> Player -> Element Msg
-playerDetails model player =
+playerDetails : Model -> Int -> Player -> Element Msg
+playerDetails model i player =
     if model.openPlayer == Just player.name then
-        openPlayer model player
+        openPlayer model i player
 
     else
-        closedPlayer model player
+        closedPlayer model i player
 
 
-openPlayer : Model -> Player -> Element Msg
-openPlayer model player =
+openPlayer : Model -> Int -> Player -> Element Msg
+openPlayer model i player =
     Element.column
         [ width fill
         , spacing 5
-        , Border.rounded 5
         , Border.color hardBorderColor
         , Border.width 1
+        , Background.color (listBackground i)
         ]
         [ openPlayerHeader model player, openPlayerBody player ]
 
@@ -941,7 +926,7 @@ openPlayerHeader model player =
         [ width fill
         , spacing 5
         , Events.onClick ClosePlayer
-        , padding 10
+        , padding 15
         ]
         (playerHeader model player)
 
@@ -951,8 +936,7 @@ openPlayerBody player =
     Element.column
         [ width fill
         , spacing 10
-        , Background.color lightShade
-        , padding 10
+        , padding 15
         ]
         [ deadOrAliveSetting player
         , noteEditor player
@@ -979,15 +963,13 @@ noteEditor player =
         }
 
 
-closedPlayer : Model -> Player -> Element Msg
-closedPlayer model player =
+closedPlayer : Model -> Int -> Player -> Element Msg
+closedPlayer model i player =
     Element.row
         [ width fill
         , spacing 5
-        , Border.rounded 5
-        , Border.color hardBorderColor
-        , Border.width 1
-        , padding 10
+        , padding 15
+        , Background.color (listBackground i)
         , Events.onClick (SelectPlayer player.name)
         ]
         (playerHeader model player)

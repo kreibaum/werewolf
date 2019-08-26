@@ -1,6 +1,6 @@
 module Components exposing (uiArray)
 
-import Element exposing (Element, el, fill, spacing, width)
+import Element exposing (Element, el, fill, width)
 import List.Extra as List
 
 
@@ -13,7 +13,7 @@ uiArray columnCount elements =
     List.greedyGroupsOf columnCount (List.map uiArrayEntry elements)
         |> List.map (padd columnCount uiArraySpacer)
         |> List.map uiArrayRow
-        |> Element.column [ spacing 10, width fill ]
+        |> Element.column [ width fill ]
 
 
 padd : Int -> a -> List a -> List a
@@ -32,7 +32,7 @@ uiArraySpacer =
 
 uiArrayRow : List (Element msg) -> Element msg
 uiArrayRow entries =
-    Element.row [ spacing 10, width fill ] entries
+    Element.row [ width fill ] entries
 
 
 uiArrayEntry : Element msg -> Element msg
