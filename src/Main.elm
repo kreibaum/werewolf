@@ -26,7 +26,8 @@ import SetHelper as Set
 
 type alias Model =
     { roles : List Role
-    , customRolesRawText : String
+    , customRoleNameRawText : String
+    , customRoleActionsRawText : String
     , selected : Dict String CardInformation
     , players : List Player
     , playersRawText : String
@@ -129,10 +130,10 @@ type GamePhase
 
 
 type Msg
-    = AddRoleButtonClick String
+    = NoOp
+    | AddRoleButtonClick String
     | RemoveRoleButtonClick String
     | TypePlayerNames String
-    | TypeCustomRoles String
     | SelectCard String
     | CloseCard
     | SelectPlayer String
@@ -147,6 +148,9 @@ type Msg
     | IncreaseFontSize
     | DecreaseFontSize
     | UpdatePlayerNote Player
+    | TypeCustomRoleName String
+    | TypeCustomRoleActions String
+    | AddRole Role
 
 
 init : Value -> ( Model, Cmd msg )
@@ -176,6 +180,15 @@ roleTemplate name target =
     { name = name, target = target }
 
 
+addOrReplaceRole : Role -> List Role -> List Role
+addOrReplaceRole role roles =
+    if List.any (\r -> r.name == role.name) roles then
+        List.setIf (\r -> r.name == role.name) role roles
+
+    else
+        roles ++ [ role ]
+
+
 type alias RoleActionConfig =
     { name : RoleAction }
 
@@ -190,10 +203,10 @@ defaultRoles =
     [ roleTemplate "Zauberkünstler" [ targetConfig "Vertauscht" ]
     , roleTemplate "Amor" [ targetConfig "Verliebt" ]
     , roleTemplate "Tom & Jerry" []
-    , roleTemplate "Leichenfresser" [ targetConfig "Frisst Reste" ]
+    , roleTemplate "Leichenfresser" [ targetConfig "Frisst Reste von" ]
     , roleTemplate "Prostituierte" [ targetConfig "Schläft bei" ]
     , roleTemplate "Werwolf" [ targetConfig "Frisst" ]
-    , roleTemplate "Vampir" [ targetConfig "Trinkt" ]
+    , roleTemplate "Vampir" [ targetConfig "Saugt aus" ]
     , roleTemplate "Fallensteller" [ targetConfig "Stellt Falle bei" ]
     , roleTemplate "Gärtner" []
     , roleTemplate "Seherin" [ targetConfig "Untersucht" ]
@@ -203,7 +216,7 @@ defaultRoles =
     , roleTemplate "Jäger" [ targetConfig "Erschießt" ]
     , roleTemplate "Fauli" []
     , roleTemplate "Mathematiker" [ targetConfig "Analysiert" ]
-    , roleTemplate "Henker" [ targetConfig "Rettet" ]
+    , roleTemplate "Henker" [ targetConfig "Begnadigt" ]
     , roleTemplate "Lebensretter" [ targetConfig "Rettet" ]
     ]
 
@@ -211,7 +224,8 @@ defaultRoles =
 defaultModel : Model
 defaultModel =
     { roles = defaultRoles
-    , customRolesRawText = ""
+    , customRoleNameRawText = ""
+    , customRoleActionsRawText = ""
     , selected = Dict.empty
     , players =
         [ "Ada", "Bert", "Carol", "Dave", "Esther", "Felix", "Greta" ]
@@ -256,6 +270,9 @@ updateWithCommand msg model =
 update : Msg -> Model -> Model
 update msg model =
     case msg of
+        NoOp ->
+            model
+
         AddRoleButtonClick name ->
             { model | selected = addCard name model.selected }
 
@@ -264,9 +281,6 @@ update msg model =
 
         TypePlayerNames rawText ->
             setPlayerNames rawText model
-
-        TypeCustomRoles rawText ->
-            setCustomRoles rawText model
 
         SelectCard identifier ->
             selectCard identifier model
@@ -309,6 +323,19 @@ update msg model =
 
         UpdatePlayerNote player ->
             { model | players = List.setIf (\p -> p.name == player.name) player model.players }
+
+        TypeCustomRoleName rawText ->
+            { model | customRoleNameRawText = rawText }
+
+        TypeCustomRoleActions rawText ->
+            { model | customRoleActionsRawText = rawText }
+
+        AddRole role ->
+            { model
+                | roles = addOrReplaceRole role model.roles
+                , customRoleNameRawText = ""
+                , customRoleActionsRawText = ""
+            }
 
 
 killPlayer : Player -> Player
@@ -382,15 +409,6 @@ parsePlayerNames rawText =
         |> List.filter (not << String.isEmpty)
 
 
-{-| Note that this is simpler than `setPlayerNames` as we allow an empty list.
-TODO!
--}
-setCustomRoles : String -> Model -> Model
-setCustomRoles rawText model =
-    --{ model | customRoles = parsePlayerNames rawText, customRolesRawText = rawText }
-    model
-
-
 selectCard : String -> Model -> Model
 selectCard identifier model =
     if openRolesAllowed model.phase then
@@ -442,9 +460,6 @@ removeTargetPlayer cardName roleAction playerName model =
 
 
 
--- removeTargetOnePlayer : String -> CardInformation -> CardInformation
--- removeTargetOnePlayer name cardInfo =
---     { cardInfo | targetPlayers = Set.remove name cardInfo.targetPlayers }
 -------------------------------
 -- Here starts the View Code --
 -------------------------------
@@ -598,8 +613,9 @@ gameSetupHeader model =
             [ setupTitle model
             , playerCountEditBox model
             , playerDuplicationWarning model
-
-            -- , customRolesEditBox model
+            , customRoleEditBox model
+            , customRolePreview model
+            , customRoleAddButton model
             , addCardsView model.roles
             ]
 
@@ -645,26 +661,81 @@ playerCountEditBox model =
         )
 
 
+customRoleEditBox : Model -> Element Msg
+customRoleEditBox model =
+    Element.row [ padding 10, width fill, spacing 10 ]
+        [ Element.el [ width fill ]
+            (Input.text []
+                { onChange = TypeCustomRoleName
+                , text = model.customRoleNameRawText
+                , placeholder = Just <| Input.placeholder [] <| text "Name der neuen Rolle"
+                , label = Input.labelAbove [] (text "Eigene Rolle hinzufügen: ")
+                }
+            )
+        , Element.el [ width fill ]
+            (Input.text []
+                { onChange = TypeCustomRoleActions
+                , text = model.customRoleActionsRawText
+                , placeholder = Just <| Input.placeholder [] <| text "Fliegen, Singen, .."
+                , label = Input.labelAbove [] (text "Aktionen: ")
+                }
+            )
+        ]
 
-{- customRolesEditBox : Model -> Element Msg
-   customRolesEditBox model =
-       let
-           placeholderText =
-               if List.isEmpty model.customRoles then
-                   "Eigene Rollen eingeben"
 
-               else
-                   String.join ", " model.customRoles
-       in
-       Element.el [ padding 10, width fill ]
-           (Input.text []
-               { onChange = TypeCustomRoles
-               , text = model.customRolesRawText
-               , placeholder = Just <| Input.placeholder [] <| text placeholderText
-               , label = Input.labelAbove [] (text "Rollen: ")
-               }
-           )
--}
+splitTargetString : String -> List RoleActionConfig
+splitTargetString rawText =
+    rawText
+        |> String.split ","
+        |> List.map String.trim
+        |> List.filter (String.isEmpty >> not)
+        |> List.unique
+        |> List.map targetConfig
+
+
+customRolePreview : Model -> Element Msg
+customRolePreview model =
+    if String.isEmpty model.customRoleNameRawText then
+        Element.none
+
+    else
+        cardOpenView model 0 model.customRoleNameRawText newCard (splitTargetString model.customRoleActionsRawText)
+            -- Silence all events from this component.
+            |> Element.map (\_ -> NoOp)
+
+
+addRoleLabel : Model -> Element msg
+addRoleLabel model =
+    Element.row
+        [ spacing 5
+        , padding 15
+        , Border.rounded 5
+        , Border.color hardBorderColor
+        , Border.width 1
+        , Background.color lightShade
+        ]
+        [ Element.el [] (Element.html <| Icon.view Solid.plus)
+        , text (model.customRoleNameRawText ++ " hinzufügen")
+        ]
+
+
+customRoleAddButton : Model -> Element Msg
+customRoleAddButton model =
+    if String.isEmpty model.customRoleNameRawText then
+        Element.none
+
+    else
+        Input.button
+            [ padding 10, alignRight ]
+            { onPress =
+                Just
+                    (AddRole
+                        { name = model.customRoleNameRawText
+                        , target = splitTargetString model.customRoleActionsRawText
+                        }
+                    )
+            , label = addRoleLabel model
+            }
 
 
 playerDuplicationWarning : Model -> Element msg
@@ -742,7 +813,14 @@ roleList model =
 roleDescription : Model -> Int -> ( String, CardInformation ) -> Element Msg
 roleDescription model i ( name, count ) =
     if model.openCard == Just name && openRolesAllowed model.phase then
-        cardOpenView model i name count
+        let
+            targets =
+                model.roles
+                    |> List.find (\r -> r.name == name)
+                    |> Maybe.map .target
+                    |> Maybe.withDefault []
+        in
+        cardOpenView model i name count targets
 
     else
         roleDescriptionClosed model i name count
@@ -818,8 +896,8 @@ removeCardIcon =
     Element.html <| Icon.view Solid.minusSquare
 
 
-cardOpenView : Model -> Int -> String -> CardInformation -> Element Msg
-cardOpenView model i name cardInfo =
+cardOpenView : Model -> Int -> String -> CardInformation -> List RoleActionConfig -> Element Msg
+cardOpenView model i name cardInfo targets =
     Element.column
         [ width fill
         , Background.color (listBackground i)
@@ -827,7 +905,7 @@ cardOpenView model i name cardInfo =
         , Border.width 1
         ]
         [ cardHeaderOpen model name cardInfo
-        , cardContent model name cardInfo
+        , cardContent model name cardInfo targets
         ]
 
 
@@ -851,15 +929,8 @@ roleHeaderOpen name cardInfo =
         ]
 
 
-cardContent : Model -> String -> CardInformation -> Element Msg
-cardContent model name cardInfo =
-    let
-        targets =
-            model.roles
-                |> List.find (\r -> r.name == name)
-                |> Maybe.map .target
-                |> Maybe.withDefault []
-    in
+cardContent : Model -> String -> CardInformation -> List RoleActionConfig -> Element Msg
+cardContent model name cardInfo targets =
     Element.column
         [ width fill
         , height fill
@@ -903,14 +974,6 @@ playerSelector cardName cardInfo player =
                 AssignPlayerToRole cardName player.name
     in
     onOffButton roleColor isAlreadySelected (playerNameText player) event
-
-
-
--- cardTargetSelection : Model -> String -> CardInformation -> RoleAction -> Element Msg
--- cardTargetSelection model name cardInfo roleAction =
---     model.players
---         |> List.map (targetSelector name cardInfo roleAction)
---         |> Element.wrappedRow [ spacing 5 ]
 
 
 cardTargetSelection : Model -> { select : String -> msg, deselect : String -> msg, selected : Set String } -> Element msg
