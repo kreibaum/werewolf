@@ -21,11 +21,11 @@ import List.Extra as List
 import ListHelper as List
 import Platform exposing (Program)
 import Set exposing (Set)
+import SetHelper as Set
 
 
 type alias Model =
-    { templates : List String
-    , customRoles : List String
+    { roles : List Role
     , customRolesRawText : String
     , selected : Dict String CardInformation
     , players : List Player
@@ -37,15 +37,13 @@ type alias Model =
     }
 
 
-templateList : Model -> List String
-templateList model =
-    model.templates ++ model.customRoles
-
-
 type alias CardInformation =
     { count : Int
     , players : Set String
-    , targetPlayers : Set String
+
+    -- Maps from a role action name to a player name
+    -- Elm does not yet mark simple wrapper types as comparable.
+    , targetPlayers : Dict String (Set String)
     }
 
 
@@ -53,8 +51,53 @@ newCard : CardInformation
 newCard =
     { count = 1
     , players = Set.empty
-    , targetPlayers = Set.empty
+    , targetPlayers = Dict.empty
     }
+
+
+cardTargets : RoleAction -> CardInformation -> Set String
+cardTargets (RoleAction actionId) cardInfo =
+    cardInfo.targetPlayers
+        |> Dict.get actionId
+        |> Maybe.withDefault Set.empty
+
+
+isAnyCardTarget : CardInformation -> String -> Bool
+isAnyCardTarget cardInfo playerName =
+    cardInfo.targetPlayers
+        |> Dict.values
+        |> List.any (Set.member playerName)
+
+
+addTarget : RoleAction -> String -> CardInformation -> CardInformation
+addTarget (RoleAction actionId) playerName cardInfo =
+    { cardInfo
+        | targetPlayers =
+            Dict.update actionId
+                (Set.insertOrSingleton playerName >> Just)
+                cardInfo.targetPlayers
+    }
+
+
+removeTarget : RoleAction -> String -> CardInformation -> CardInformation
+removeTarget (RoleAction actionId) playerName cardInfo =
+    { cardInfo
+        | targetPlayers =
+            Dict.update actionId
+                (Maybe.map (Set.remove playerName))
+                cardInfo.targetPlayers
+    }
+
+
+{-| Custom type to make sure we don't mix up all our different types of strings.
+-}
+type RoleAction
+    = RoleAction String
+
+
+actionName : RoleAction -> String
+actionName (RoleAction actionId) =
+    actionId
 
 
 type alias Player =
@@ -96,8 +139,8 @@ type Msg
     | ClosePlayer
     | AssignPlayerToRole String String
     | RemovePlayerFromRole String String
-    | TargetPlayer String String
-    | RemoveTargetPlayer String String
+    | TargetPlayer String RoleAction String
+    | RemoveTargetPlayer String RoleAction String
     | KillPlayer String
     | RevivePlayer String
     | SetPhase GamePhase
@@ -122,33 +165,52 @@ init flags =
     )
 
 
-defaultRoles : List String
+type alias Role =
+    { name : String
+    , target : List RoleActionConfig
+    }
+
+
+roleTemplate : String -> List RoleActionConfig -> Role
+roleTemplate name target =
+    { name = name, target = target }
+
+
+type alias RoleActionConfig =
+    { name : RoleAction }
+
+
+targetConfig : String -> RoleActionConfig
+targetConfig actionId =
+    { name = RoleAction actionId }
+
+
+defaultRoles : List Role
 defaultRoles =
-    [ "Zauberkünstler"
-    , "Amor"
-    , "Tom & Jerry"
-    , "Leichenfresser"
-    , "Prostituierte"
-    , "Werwolf"
-    , "Vampir"
-    , "Fallensteller"
-    , "Seherin"
-    , "Hexe"
-    , "Seelenretter"
-    , "Bibliothekar"
-    , "Jäger"
-    , "Fauli"
-    , "Mathematiker"
-    , "Henker"
-    , "Gärtner"
-    , "Lebensretter"
+    [ roleTemplate "Zauberkünstler" [ targetConfig "Vertauscht" ]
+    , roleTemplate "Amor" [ targetConfig "Verliebt" ]
+    , roleTemplate "Tom & Jerry" []
+    , roleTemplate "Leichenfresser" [ targetConfig "Frisst Reste" ]
+    , roleTemplate "Prostituierte" [ targetConfig "Schläft bei" ]
+    , roleTemplate "Werwolf" [ targetConfig "Frisst" ]
+    , roleTemplate "Vampir" [ targetConfig "Trinkt" ]
+    , roleTemplate "Fallensteller" [ targetConfig "Stellt Falle bei" ]
+    , roleTemplate "Gärtner" []
+    , roleTemplate "Seherin" [ targetConfig "Untersucht" ]
+    , roleTemplate "Hexe" [ targetConfig "Lebenstrank", targetConfig "Todestrank" ]
+    , roleTemplate "Seelenretter" [ targetConfig "Schützt" ]
+    , roleTemplate "Bibliothekar" [ targetConfig "Bringt zum Schweigen" ]
+    , roleTemplate "Jäger" [ targetConfig "Erschießt" ]
+    , roleTemplate "Fauli" []
+    , roleTemplate "Mathematiker" [ targetConfig "Analysiert" ]
+    , roleTemplate "Henker" [ targetConfig "Rettet" ]
+    , roleTemplate "Lebensretter" [ targetConfig "Rettet" ]
     ]
 
 
 defaultModel : Model
 defaultModel =
-    { templates = defaultRoles
-    , customRoles = []
+    { roles = defaultRoles
     , customRolesRawText = ""
     , selected = Dict.empty
     , players =
@@ -158,7 +220,7 @@ defaultModel =
     , openCard = Nothing
     , openPlayer = Nothing
     , phase = Preparation
-    , uiScale = 2
+    , uiScale = 3
     }
 
 
@@ -224,11 +286,11 @@ update msg model =
         RemovePlayerFromRole cardName playerName ->
             removePlayerFromRole cardName playerName model
 
-        TargetPlayer cardName playerName ->
-            targetPlayer cardName playerName model
+        TargetPlayer cardName roleAction playerName ->
+            targetPlayer cardName roleAction playerName model
 
-        RemoveTargetPlayer cardName playerName ->
-            removeTargetPlayer cardName playerName model
+        RemoveTargetPlayer cardName roleAction playerName ->
+            removeTargetPlayer cardName roleAction playerName model
 
         KillPlayer name ->
             { model | players = List.updateIf (\p -> p.name == name) killPlayer model.players }
@@ -290,7 +352,7 @@ removeCard template dict =
 cardCount : Model -> Int
 cardCount model =
     model.selected
-        |> Dict.filter (\name _ -> List.member name (templateList model))
+        |> Dict.filter (\name _ -> List.any (\r -> r.name == name) model.roles)
         |> Dict.values
         |> List.map (\x -> x.count)
         |> List.sum
@@ -321,10 +383,12 @@ parsePlayerNames rawText =
 
 
 {-| Note that this is simpler than `setPlayerNames` as we allow an empty list.
+TODO!
 -}
 setCustomRoles : String -> Model -> Model
 setCustomRoles rawText model =
-    { model | customRoles = parsePlayerNames rawText, customRolesRawText = rawText }
+    --{ model | customRoles = parsePlayerNames rawText, customRolesRawText = rawText }
+    model
 
 
 selectCard : String -> Model -> Model
@@ -361,27 +425,26 @@ removePlayer name cardInfo =
     { cardInfo | players = Set.remove name cardInfo.players }
 
 
-targetPlayer : String -> String -> Model -> Model
-targetPlayer cardName playerName model =
-    { model | selected = Dict.update cardName (Maybe.map <| targetOnePlayer playerName) model.selected }
-
-
-targetOnePlayer : String -> CardInformation -> CardInformation
-targetOnePlayer name cardInfo =
-    { cardInfo | targetPlayers = Set.insert name cardInfo.targetPlayers }
-
-
-removeTargetPlayer : String -> String -> Model -> Model
-removeTargetPlayer cardName playerName model =
-    { model | selected = Dict.update cardName (Maybe.map <| removeTargetOnePlayer playerName) model.selected }
-
-
-removeTargetOnePlayer : String -> CardInformation -> CardInformation
-removeTargetOnePlayer name cardInfo =
-    { cardInfo | targetPlayers = Set.remove name cardInfo.targetPlayers }
+targetPlayer : String -> RoleAction -> String -> Model -> Model
+targetPlayer cardName roleAction playerName model =
+    { model | selected = Dict.update cardName (Maybe.map <| addTarget roleAction playerName) model.selected }
 
 
 
+-- targetOnePlayer : String -> CardInformation -> CardInformation
+-- targetOnePlayer name cardInfo =
+--     { cardInfo | targetPlayers = Set.insert name cardInfo.targetPlayers }
+
+
+removeTargetPlayer : String -> RoleAction -> String -> Model -> Model
+removeTargetPlayer cardName roleAction playerName model =
+    { model | selected = Dict.update cardName (Maybe.map <| removeTarget roleAction playerName) model.selected }
+
+
+
+-- removeTargetOnePlayer : String -> CardInformation -> CardInformation
+-- removeTargetOnePlayer name cardInfo =
+--     { cardInfo | targetPlayers = Set.remove name cardInfo.targetPlayers }
 -------------------------------
 -- Here starts the View Code --
 -------------------------------
@@ -535,8 +598,9 @@ gameSetupHeader model =
             [ setupTitle model
             , playerCountEditBox model
             , playerDuplicationWarning model
-            , customRolesEditBox model
-            , addCardsView (templateList model)
+
+            -- , customRolesEditBox model
+            , addCardsView model.roles
             ]
 
     else
@@ -581,24 +645,26 @@ playerCountEditBox model =
         )
 
 
-customRolesEditBox : Model -> Element Msg
-customRolesEditBox model =
-    let
-        placeholderText =
-            if List.isEmpty model.customRoles then
-                "Eigene Rollen eingeben"
 
-            else
-                String.join ", " model.customRoles
-    in
-    Element.el [ padding 10, width fill ]
-        (Input.text []
-            { onChange = TypeCustomRoles
-            , text = model.customRolesRawText
-            , placeholder = Just <| Input.placeholder [] <| text placeholderText
-            , label = Input.labelAbove [] (text "Rollen: ")
-            }
-        )
+{- customRolesEditBox : Model -> Element Msg
+   customRolesEditBox model =
+       let
+           placeholderText =
+               if List.isEmpty model.customRoles then
+                   "Eigene Rollen eingeben"
+
+               else
+                   String.join ", " model.customRoles
+       in
+       Element.el [ padding 10, width fill ]
+           (Input.text []
+               { onChange = TypeCustomRoles
+               , text = model.customRolesRawText
+               , placeholder = Just <| Input.placeholder [] <| text placeholderText
+               , label = Input.labelAbove [] (text "Rollen: ")
+               }
+           )
+-}
 
 
 playerDuplicationWarning : Model -> Element msg
@@ -621,11 +687,11 @@ playerDuplicationWarning model =
         text <| "Jeder Name darf nur einmal vorkommen, aber " ++ duplicateNames ++ " ist mehrfach angegeben."
 
 
-addCardsView : List String -> Element Msg
+addCardsView : List Role -> Element Msg
 addCardsView templates =
     Element.column [ width fill, spacing 5 ]
         [ Element.el [ padding 10, width fill ] (text "Sonderrollen hinzufügen:")
-        , buttonArray templates
+        , buttonArray (List.map .name templates)
         ]
 
 
@@ -650,7 +716,8 @@ roleList : Model -> Element Msg
 roleList model =
     let
         specialCards =
-            templateList model
+            model.roles
+                |> List.map .name
                 |> List.filterMap (\t -> Dict.getWithKey t model.selected)
                 |> List.indexedMap (roleDescription model)
 
@@ -786,17 +853,33 @@ roleHeaderOpen name cardInfo =
 
 cardContent : Model -> String -> CardInformation -> Element Msg
 cardContent model name cardInfo =
+    let
+        targets =
+            model.roles
+                |> List.find (\r -> r.name == name)
+                |> Maybe.map .target
+                |> Maybe.withDefault []
+    in
     Element.column
         [ width fill
         , height fill
         , padding 15
         , spacing 10
         ]
-        [ text "Spielerauswahl"
-        , playerCardSelection model name cardInfo
-        , text "Zielauswahl"
-        , cardTargetSelection model name cardInfo
-        ]
+        (playerCardSelection model name cardInfo
+            :: List.concat (List.map (targetSelection model name cardInfo) targets)
+        )
+
+
+targetSelection : Model -> String -> CardInformation -> RoleActionConfig -> List (Element Msg)
+targetSelection model name cardInfo actionType =
+    [ text (actionName actionType.name)
+    , cardTargetSelection model
+        { select = TargetPlayer name actionType.name
+        , deselect = RemoveTargetPlayer name actionType.name
+        , selected = cardTargets actionType.name cardInfo
+        }
+    ]
 
 
 playerCardSelection : Model -> String -> CardInformation -> Element Msg
@@ -822,30 +905,38 @@ playerSelector cardName cardInfo player =
     onOffButton roleColor isAlreadySelected (playerNameText player) event
 
 
-cardTargetSelection : Model -> String -> CardInformation -> Element Msg
-cardTargetSelection model name cardInfo =
+
+-- cardTargetSelection : Model -> String -> CardInformation -> RoleAction -> Element Msg
+-- cardTargetSelection model name cardInfo roleAction =
+--     model.players
+--         |> List.map (targetSelector name cardInfo roleAction)
+--         |> Element.wrappedRow [ spacing 5 ]
+
+
+cardTargetSelection : Model -> { select : String -> msg, deselect : String -> msg, selected : Set String } -> Element msg
+cardTargetSelection model r =
     model.players
-        |> List.map (targetSelector name cardInfo)
+        |> List.map (targetSelector r)
         |> Element.wrappedRow [ spacing 5 ]
 
 
-targetSelector : String -> CardInformation -> Player -> Element Msg
-targetSelector cardName cardInfo player =
+targetSelector : { select : String -> msg, deselect : String -> msg, selected : Set String } -> Player -> Element msg
+targetSelector r player =
     let
-        isAlreadySelected =
-            Set.member player.name cardInfo.targetPlayers
+        isSelected =
+            Set.member player.name r.selected
 
         event =
-            if isAlreadySelected then
-                RemoveTargetPlayer cardName player.name
+            if isSelected then
+                r.deselect player.name
 
             else
-                TargetPlayer cardName player.name
+                r.select player.name
     in
-    onOffButton targetColor isAlreadySelected (playerNameText player) event
+    onOffButton targetColor isSelected (playerNameText player) event
 
 
-onOffButton : Color -> Bool -> Element Never -> Msg -> Element Msg
+onOffButton : Color -> Bool -> Element Never -> msg -> Element msg
 onOffButton color isSelected caption event =
     let
         selectionStyle =
@@ -876,7 +967,7 @@ playerBadgeList model cardInfo =
 
         targetPlayers =
             model.players
-                |> List.filter (\p -> Set.member p.name cardInfo.targetPlayers)
+                |> List.filter (\p -> isAnyCardTarget cardInfo p.name)
                 |> List.map (playerNameText >> targetBadge model)
 
         entries =
@@ -1002,7 +1093,8 @@ playerHeader : Model -> Player -> List (Element msg)
 playerHeader model player =
     let
         cards =
-            templateList model
+            model.roles
+                |> List.map .name
                 |> List.filterSet (cardsByPlayer model player.name)
                 |> List.map (text >> roleBadge model)
 
@@ -1021,7 +1113,8 @@ playerHeader model player =
                 "und ist Ziel von"
 
         targeting =
-            templateList model
+            model.roles
+                |> List.map .name
                 |> List.filterSet (targetingCardsByPlayer model player.name)
                 |> List.map (text >> targetBadge model)
 
@@ -1100,6 +1193,6 @@ cardsByPlayer model name =
 targetingCardsByPlayer : Model -> String -> Set String
 targetingCardsByPlayer model name =
     model.selected
-        |> Dict.filter (\_ cardInfo -> Set.member name cardInfo.targetPlayers)
+        |> Dict.filter (\_ cardInfo -> isAnyCardTarget cardInfo name)
         |> Dict.keys
         |> Set.fromList
