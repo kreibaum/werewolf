@@ -13,7 +13,4 @@ This tool does not use a server and is written as an [Elm](https://elm-lang.org)
 
 For development I use the [Elm Live](https://github.com/wking-io/elm-live) development server:
 
-    elm-live src/Main.elm -- --output=static/elm.js
-
-Deployment to github-pages happens automatically via travis, see [Domenic Denicola's instructions](https://gist.github.com/domenic/ec8b0fc8ab45f39403dd).
-You can also run the build script `./build.sh` manually.
+    elm-live src/Main.elm --start-page=index.html --dir=static -- --output=static/elm.js
