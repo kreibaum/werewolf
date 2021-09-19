@@ -1,7 +1,0 @@
-language: elm
-
-script: bash ./deploy.sh
-env:
-  global:
-  - ENCRYPTION_LABEL: 6cb39516c676
-  - COMMIT_AUTHOR_EMAIL: "rolf.kreibaum@posteo.de"
