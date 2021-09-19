@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Browser
-import Cache exposing (Cache, readCache)
+import Cache
 import Components exposing (uiArray)
 import Dict exposing (Dict)
 import DictHelper as Dict
@@ -149,11 +149,6 @@ defaultModel =
     , phase = Preparation
     , uiScale = 3
     }
-
-
-applyCache : Cache -> Model -> Model
-applyCache cache model =
-    { model | players = cache.names |> List.map newPlayer }
 
 
 main : Program Value Model Msg
