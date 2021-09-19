@@ -217,7 +217,7 @@ encodeTypesGamePhase value =
 
 
 
-{-| TypeAliasDef (AliasRecordType (TypeName "Types.Model" []) [CustomField (FieldName "roles") (CustomTypeConstructor (TitleCaseDotPhrase "List") [CustomTypeConstructor (TitleCaseDotPhrase "Types.Role") []]),CustomField (FieldName "customRoleNameRawText") (CustomTypeConstructor (TitleCaseDotPhrase "String") []),CustomField (FieldName "customRoleActionsRawText") (CustomTypeConstructor (TitleCaseDotPhrase "String") []),CustomField (FieldName "selected") (CustomTypeConstructor (TitleCaseDotPhrase "Dict.Dict") [CustomTypeConstructor (TitleCaseDotPhrase "String") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.CardInformation") []]),CustomField (FieldName "players") (CustomTypeConstructor (TitleCaseDotPhrase "List") [CustomTypeConstructor (TitleCaseDotPhrase "Types.Player") []]),CustomField (FieldName "playersRawText") (CustomTypeConstructor (TitleCaseDotPhrase "String") []),CustomField (FieldName "openCard") (CustomTypeConstructor (TitleCaseDotPhrase "Maybe") [CustomTypeConstructor (TitleCaseDotPhrase "String") []]),CustomField (FieldName "openPlayer") (CustomTypeConstructor (TitleCaseDotPhrase "Maybe") [CustomTypeConstructor (TitleCaseDotPhrase "String") []]),CustomField (FieldName "phase") (CustomTypeConstructor (TitleCaseDotPhrase "Types.GamePhase") []),CustomField (FieldName "uiScale") (CustomTypeConstructor (TitleCaseDotPhrase "Int") [])]) -}
+{-| TypeAliasDef (AliasRecordType (TypeName "Types.Model" []) [CustomField (FieldName "roles") (CustomTypeConstructor (TitleCaseDotPhrase "List") [CustomTypeConstructor (TitleCaseDotPhrase "Types.Role") []]),CustomField (FieldName "customRoleNameRawText") (CustomTypeConstructor (TitleCaseDotPhrase "String") []),CustomField (FieldName "customRoleActionsRawText") (CustomTypeConstructor (TitleCaseDotPhrase "String") []),CustomField (FieldName "selected") (CustomTypeConstructor (TitleCaseDotPhrase "Dict.Dict") [CustomTypeConstructor (TitleCaseDotPhrase "String") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.CardInformation") []]),CustomField (FieldName "players") (CustomTypeConstructor (TitleCaseDotPhrase "List") [CustomTypeConstructor (TitleCaseDotPhrase "Types.Player") []]),CustomField (FieldName "playersRawText") (CustomTypeConstructor (TitleCaseDotPhrase "String") []),CustomField (FieldName "openCard") (CustomTypeConstructor (TitleCaseDotPhrase "Maybe") [CustomTypeConstructor (TitleCaseDotPhrase "String") []]),CustomField (FieldName "openPlayer") (CustomTypeConstructor (TitleCaseDotPhrase "Maybe") [CustomTypeConstructor (TitleCaseDotPhrase "String") []]),CustomField (FieldName "phase") (CustomTypeConstructor (TitleCaseDotPhrase "Types.GamePhase") []),CustomField (FieldName "uiScale") (CustomTypeConstructor (TitleCaseDotPhrase "Int") []),CustomField (FieldName "resetState") (CustomTypeConstructor (TitleCaseDotPhrase "Int") [])]) -}
 encodeTypesModel : Types.Model -> Json.Encode.Value
 encodeTypesModel value =
     Json.Encode.object
@@ -231,35 +231,8 @@ encodeTypesModel value =
         , ("openPlayer", (encodeMaybe (encodeString)) value.openPlayer)
         , ("phase", (encodeTypesGamePhase) value.phase)
         , ("uiScale", (encodeInt) value.uiScale)
+        , ("resetState", (encodeInt) value.resetState)
         ]
-
-
-
-{-| CustomTypeDef { constructors = [CustomTypeConstructor (TitleCaseDotPhrase "Types.NoOp") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.AddRoleButtonClick") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.RemoveRoleButtonClick") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.TypePlayerNames") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.SelectCard") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.CloseCard") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.SelectPlayer") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.ClosePlayer") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.AssignPlayerToRole") [CustomTypeConstructor (TitleCaseDotPhrase "String") [],CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.RemovePlayerFromRole") [CustomTypeConstructor (TitleCaseDotPhrase "String") [],CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.TargetPlayer") [CustomTypeConstructor (TitleCaseDotPhrase "String") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.RoleAction") [],CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.RemoveTargetPlayer") [CustomTypeConstructor (TitleCaseDotPhrase "String") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.RoleAction") [],CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.KillPlayer") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.RevivePlayer") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.SetPhase") [CustomTypeConstructor (TitleCaseDotPhrase "Types.GamePhase") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.IncreaseFontSize") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.DecreaseFontSize") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.UpdatePlayerNote") [CustomTypeConstructor (TitleCaseDotPhrase "Types.Player") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.TypeCustomRoleName") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.TypeCustomRoleActions") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.AddRole") [CustomTypeConstructor (TitleCaseDotPhrase "Types.Role") []]], name = TypeName "Types.Msg" [] } -}
-encodeTypesMsg : Types.Msg -> Json.Encode.Value
-encodeTypesMsg value =
-    case value of
-        (Types.NoOp) -> (Json.Encode.list identity [ encodeString "Types.NoOp" ])
-        (Types.AddRoleButtonClick m0) -> (Json.Encode.list identity [ encodeString "Types.AddRoleButtonClick", (encodeString m0) ])
-        (Types.RemoveRoleButtonClick m0) -> (Json.Encode.list identity [ encodeString "Types.RemoveRoleButtonClick", (encodeString m0) ])
-        (Types.TypePlayerNames m0) -> (Json.Encode.list identity [ encodeString "Types.TypePlayerNames", (encodeString m0) ])
-        (Types.SelectCard m0) -> (Json.Encode.list identity [ encodeString "Types.SelectCard", (encodeString m0) ])
-        (Types.CloseCard) -> (Json.Encode.list identity [ encodeString "Types.CloseCard" ])
-        (Types.SelectPlayer m0) -> (Json.Encode.list identity [ encodeString "Types.SelectPlayer", (encodeString m0) ])
-        (Types.ClosePlayer) -> (Json.Encode.list identity [ encodeString "Types.ClosePlayer" ])
-        (Types.AssignPlayerToRole m0 m1) -> (Json.Encode.list identity [ encodeString "Types.AssignPlayerToRole", (encodeString m0), (encodeString m1) ])
-        (Types.RemovePlayerFromRole m0 m1) -> (Json.Encode.list identity [ encodeString "Types.RemovePlayerFromRole", (encodeString m0), (encodeString m1) ])
-        (Types.TargetPlayer m0 m1 m2) -> (Json.Encode.list identity [ encodeString "Types.TargetPlayer", (encodeString m0), (encodeTypesRoleAction m1), (encodeString m2) ])
-        (Types.RemoveTargetPlayer m0 m1 m2) -> (Json.Encode.list identity [ encodeString "Types.RemoveTargetPlayer", (encodeString m0), (encodeTypesRoleAction m1), (encodeString m2) ])
-        (Types.KillPlayer m0) -> (Json.Encode.list identity [ encodeString "Types.KillPlayer", (encodeString m0) ])
-        (Types.RevivePlayer m0) -> (Json.Encode.list identity [ encodeString "Types.RevivePlayer", (encodeString m0) ])
-        (Types.SetPhase m0) -> (Json.Encode.list identity [ encodeString "Types.SetPhase", (encodeTypesGamePhase m0) ])
-        (Types.IncreaseFontSize) -> (Json.Encode.list identity [ encodeString "Types.IncreaseFontSize" ])
-        (Types.DecreaseFontSize) -> (Json.Encode.list identity [ encodeString "Types.DecreaseFontSize" ])
-        (Types.UpdatePlayerNote m0) -> (Json.Encode.list identity [ encodeString "Types.UpdatePlayerNote", (encodeTypesPlayer m0) ])
-        (Types.TypeCustomRoleName m0) -> (Json.Encode.list identity [ encodeString "Types.TypeCustomRoleName", (encodeString m0) ])
-        (Types.TypeCustomRoleActions m0) -> (Json.Encode.list identity [ encodeString "Types.TypeCustomRoleActions", (encodeString m0) ])
-        (Types.AddRole m0) -> (Json.Encode.list identity [ encodeString "Types.AddRole", (encodeTypesRole m0) ])
 
 
 
@@ -334,7 +307,7 @@ decodeTypesGamePhase  =
 
 
 
-{-| TypeAliasDef (AliasRecordType (TypeName "Types.Model" []) [CustomField (FieldName "roles") (CustomTypeConstructor (TitleCaseDotPhrase "List") [CustomTypeConstructor (TitleCaseDotPhrase "Types.Role") []]),CustomField (FieldName "customRoleNameRawText") (CustomTypeConstructor (TitleCaseDotPhrase "String") []),CustomField (FieldName "customRoleActionsRawText") (CustomTypeConstructor (TitleCaseDotPhrase "String") []),CustomField (FieldName "selected") (CustomTypeConstructor (TitleCaseDotPhrase "Dict.Dict") [CustomTypeConstructor (TitleCaseDotPhrase "String") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.CardInformation") []]),CustomField (FieldName "players") (CustomTypeConstructor (TitleCaseDotPhrase "List") [CustomTypeConstructor (TitleCaseDotPhrase "Types.Player") []]),CustomField (FieldName "playersRawText") (CustomTypeConstructor (TitleCaseDotPhrase "String") []),CustomField (FieldName "openCard") (CustomTypeConstructor (TitleCaseDotPhrase "Maybe") [CustomTypeConstructor (TitleCaseDotPhrase "String") []]),CustomField (FieldName "openPlayer") (CustomTypeConstructor (TitleCaseDotPhrase "Maybe") [CustomTypeConstructor (TitleCaseDotPhrase "String") []]),CustomField (FieldName "phase") (CustomTypeConstructor (TitleCaseDotPhrase "Types.GamePhase") []),CustomField (FieldName "uiScale") (CustomTypeConstructor (TitleCaseDotPhrase "Int") [])]) -}
+{-| TypeAliasDef (AliasRecordType (TypeName "Types.Model" []) [CustomField (FieldName "roles") (CustomTypeConstructor (TitleCaseDotPhrase "List") [CustomTypeConstructor (TitleCaseDotPhrase "Types.Role") []]),CustomField (FieldName "customRoleNameRawText") (CustomTypeConstructor (TitleCaseDotPhrase "String") []),CustomField (FieldName "customRoleActionsRawText") (CustomTypeConstructor (TitleCaseDotPhrase "String") []),CustomField (FieldName "selected") (CustomTypeConstructor (TitleCaseDotPhrase "Dict.Dict") [CustomTypeConstructor (TitleCaseDotPhrase "String") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.CardInformation") []]),CustomField (FieldName "players") (CustomTypeConstructor (TitleCaseDotPhrase "List") [CustomTypeConstructor (TitleCaseDotPhrase "Types.Player") []]),CustomField (FieldName "playersRawText") (CustomTypeConstructor (TitleCaseDotPhrase "String") []),CustomField (FieldName "openCard") (CustomTypeConstructor (TitleCaseDotPhrase "Maybe") [CustomTypeConstructor (TitleCaseDotPhrase "String") []]),CustomField (FieldName "openPlayer") (CustomTypeConstructor (TitleCaseDotPhrase "Maybe") [CustomTypeConstructor (TitleCaseDotPhrase "String") []]),CustomField (FieldName "phase") (CustomTypeConstructor (TitleCaseDotPhrase "Types.GamePhase") []),CustomField (FieldName "uiScale") (CustomTypeConstructor (TitleCaseDotPhrase "Int") []),CustomField (FieldName "resetState") (CustomTypeConstructor (TitleCaseDotPhrase "Int") [])]) -}
 decodeTypesModel : Json.Decode.Decoder (Types.Model)
 decodeTypesModel  =
     Json.Decode.succeed Types.Model
@@ -348,40 +321,7 @@ decodeTypesModel  =
         |> Json.Decode.map2 (|>) (Json.Decode.oneOf [Json.Decode.at [ "openPlayer" ] (decodeMaybe (decodeString)), Json.Decode.succeed Nothing])
         |> Json.Decode.map2 (|>) (Json.Decode.at [ "phase" ] (decodeTypesGamePhase))
         |> Json.Decode.map2 (|>) (Json.Decode.at [ "uiScale" ] (decodeInt))
-
-
-
-{-| CustomTypeDef { constructors = [CustomTypeConstructor (TitleCaseDotPhrase "Types.NoOp") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.AddRoleButtonClick") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.RemoveRoleButtonClick") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.TypePlayerNames") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.SelectCard") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.CloseCard") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.SelectPlayer") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.ClosePlayer") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.AssignPlayerToRole") [CustomTypeConstructor (TitleCaseDotPhrase "String") [],CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.RemovePlayerFromRole") [CustomTypeConstructor (TitleCaseDotPhrase "String") [],CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.TargetPlayer") [CustomTypeConstructor (TitleCaseDotPhrase "String") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.RoleAction") [],CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.RemoveTargetPlayer") [CustomTypeConstructor (TitleCaseDotPhrase "String") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.RoleAction") [],CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.KillPlayer") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.RevivePlayer") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.SetPhase") [CustomTypeConstructor (TitleCaseDotPhrase "Types.GamePhase") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.IncreaseFontSize") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.DecreaseFontSize") [],CustomTypeConstructor (TitleCaseDotPhrase "Types.UpdatePlayerNote") [CustomTypeConstructor (TitleCaseDotPhrase "Types.Player") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.TypeCustomRoleName") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.TypeCustomRoleActions") [CustomTypeConstructor (TitleCaseDotPhrase "String") []],CustomTypeConstructor (TitleCaseDotPhrase "Types.AddRole") [CustomTypeConstructor (TitleCaseDotPhrase "Types.Role") []]], name = TypeName "Types.Msg" [] } -}
-decodeTypesMsg : Json.Decode.Decoder (Types.Msg)
-decodeTypesMsg  =
-    Json.Decode.index 0 Json.Decode.string
-        |> Json.Decode.andThen
-            (\word ->
-                case word of
-                    "Types.NoOp" -> (Json.Decode.succeed Types.NoOp)
-                    "Types.AddRoleButtonClick" -> (Json.Decode.succeed Types.AddRoleButtonClick |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeString))))
-                    "Types.RemoveRoleButtonClick" -> (Json.Decode.succeed Types.RemoveRoleButtonClick |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeString))))
-                    "Types.TypePlayerNames" -> (Json.Decode.succeed Types.TypePlayerNames |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeString))))
-                    "Types.SelectCard" -> (Json.Decode.succeed Types.SelectCard |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeString))))
-                    "Types.CloseCard" -> (Json.Decode.succeed Types.CloseCard)
-                    "Types.SelectPlayer" -> (Json.Decode.succeed Types.SelectPlayer |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeString))))
-                    "Types.ClosePlayer" -> (Json.Decode.succeed Types.ClosePlayer)
-                    "Types.AssignPlayerToRole" -> (Json.Decode.succeed Types.AssignPlayerToRole |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeString))) |> (Json.Decode.map2 (|>) (Json.Decode.index 2 (decodeString))))
-                    "Types.RemovePlayerFromRole" -> (Json.Decode.succeed Types.RemovePlayerFromRole |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeString))) |> (Json.Decode.map2 (|>) (Json.Decode.index 2 (decodeString))))
-                    "Types.TargetPlayer" -> (Json.Decode.succeed Types.TargetPlayer |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeString))) |> (Json.Decode.map2 (|>) (Json.Decode.index 2 (decodeTypesRoleAction))) |> (Json.Decode.map2 (|>) (Json.Decode.index 3 (decodeString))))
-                    "Types.RemoveTargetPlayer" -> (Json.Decode.succeed Types.RemoveTargetPlayer |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeString))) |> (Json.Decode.map2 (|>) (Json.Decode.index 2 (decodeTypesRoleAction))) |> (Json.Decode.map2 (|>) (Json.Decode.index 3 (decodeString))))
-                    "Types.KillPlayer" -> (Json.Decode.succeed Types.KillPlayer |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeString))))
-                    "Types.RevivePlayer" -> (Json.Decode.succeed Types.RevivePlayer |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeString))))
-                    "Types.SetPhase" -> (Json.Decode.succeed Types.SetPhase |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeTypesGamePhase))))
-                    "Types.IncreaseFontSize" -> (Json.Decode.succeed Types.IncreaseFontSize)
-                    "Types.DecreaseFontSize" -> (Json.Decode.succeed Types.DecreaseFontSize)
-                    "Types.UpdatePlayerNote" -> (Json.Decode.succeed Types.UpdatePlayerNote |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeTypesPlayer))))
-                    "Types.TypeCustomRoleName" -> (Json.Decode.succeed Types.TypeCustomRoleName |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeString))))
-                    "Types.TypeCustomRoleActions" -> (Json.Decode.succeed Types.TypeCustomRoleActions |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeString))))
-                    "Types.AddRole" -> (Json.Decode.succeed Types.AddRole |> (Json.Decode.map2 (|>) (Json.Decode.index 1 (decodeTypesRole))))
-                    _ -> Json.Decode.fail ("Unexpected Types.Msg: " ++ word)
-            )
-                 
+        |> Json.Decode.map2 (|>) (Json.Decode.at [ "resetState" ] (decodeInt))
 
 
 

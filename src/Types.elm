@@ -15,6 +15,7 @@ type alias Model =
     , openPlayer : Maybe String
     , phase : GamePhase
     , uiScale : Int
+    , resetState : Int
     }
 
 
@@ -52,30 +53,6 @@ type GamePhase
     = Preparation
     | Night
     | Day
-
-
-type Msg
-    = NoOp
-    | AddRoleButtonClick String
-    | RemoveRoleButtonClick String
-    | TypePlayerNames String
-    | SelectCard String
-    | CloseCard
-    | SelectPlayer String
-    | ClosePlayer
-    | AssignPlayerToRole String String
-    | RemovePlayerFromRole String String
-    | TargetPlayer String RoleAction String
-    | RemoveTargetPlayer String RoleAction String
-    | KillPlayer String
-    | RevivePlayer String
-    | SetPhase GamePhase
-    | IncreaseFontSize
-    | DecreaseFontSize
-    | UpdatePlayerNote Player
-    | TypeCustomRoleName String
-    | TypeCustomRoleActions String
-    | AddRole Role
 
 
 type alias Role =

@@ -27,6 +27,32 @@ import Types exposing (..)
 import Types.Auto exposing (decodeTypesModel, encodeTypesModel)
 
 
+type Msg
+    = NoOp
+    | AddRoleButtonClick String
+    | RemoveRoleButtonClick String
+    | TypePlayerNames String
+    | SelectCard String
+    | CloseCard
+    | SelectPlayer String
+    | ClosePlayer
+    | AssignPlayerToRole String String
+    | RemovePlayerFromRole String String
+    | TargetPlayer String RoleAction String
+    | RemoveTargetPlayer String RoleAction String
+    | KillPlayer String
+    | RevivePlayer String
+    | SetPhase GamePhase
+    | IncreaseFontSize
+    | DecreaseFontSize
+    | UpdatePlayerNote Player
+    | TypeCustomRoleName String
+    | TypeCustomRoleActions String
+    | AddRole Role
+    | SetResetState Int
+    | ResetModel
+
+
 newCard : CardInformation
 newCard =
     { count = 1
@@ -148,6 +174,7 @@ defaultModel =
     , openPlayer = Nothing
     , phase = Preparation
     , uiScale = 3
+    , resetState = 0
     }
 
 
@@ -242,6 +269,20 @@ update msg model =
                 , customRoleNameRawText = ""
                 , customRoleActionsRawText = ""
             }
+
+        SetResetState resetState ->
+            { model | resetState = resetState }
+
+        ResetModel ->
+            resetModel model
+
+
+{-| Reset everything exept for the player names.
+-}
+resetModel : Model -> Model
+resetModel oldModel =
+    { defaultModel | playersRawText = oldModel.playersRawText }
+        |> setPlayerNames oldModel.playersRawText
 
 
 killPlayer : Player -> Player
@@ -436,6 +477,7 @@ mainView model =
         [ Element.html FontAwesome.Styles.css
         , phaseHeader model
         , phaseView model
+        , resetArea model.phase model.resetState
         ]
 
 
@@ -1165,3 +1207,82 @@ targetingCardsByPlayer model name =
         |> Dict.filter (\_ cardInfo -> isAnyCardTarget cardInfo name)
         |> Dict.keys
         |> Set.fromList
+
+
+resetArea : GamePhase -> Int -> Element Msg
+resetArea phase resetState =
+    if phase == Preparation then
+        if resetState <= 0 then
+            resetAreaClosed
+
+        else
+            resetAreaOpen resetState
+
+    else
+        Element.none
+
+
+resetAreaOpen : Int -> Element Msg
+resetAreaOpen resetState =
+    Element.column
+        [ width fill ]
+        [ Element.el [ padding 10, width fill, Events.onClick (SetResetState 0) ]
+            (text "Spielaufbau zurücksetzen [Ausgeklappt]")
+        , Element.paragraph [ padding 20 ]
+            [ text "Dies setzt alles außer den Namen zurück. Klicke die Buchstaben nacheinander an." ]
+        , Element.row [ padding 20, spacing 10, width fill ]
+            [ bigResetLetter "R" ( 1, resetState ) (SetResetState 2)
+            , bigResetLetter "E" ( 2, resetState ) (SetResetState 3)
+            , bigResetLetter "S" ( 3, resetState ) (SetResetState 4)
+            , bigResetLetter "E" ( 4, resetState ) (SetResetState 5)
+            , bigResetLetter "T" ( 5, resetState ) ResetModel
+            ]
+        ]
+
+
+bigResetLetter : String -> ( Int, Int ) -> Msg -> Element Msg
+bigResetLetter caption ( index, resetState ) event =
+    Element.el (bigResetStyle index resetState event)
+        (text caption)
+
+
+bigResetStyle : Int -> Int -> Msg -> List (Element.Attribute Msg)
+bigResetStyle index resetState event =
+    if index < resetState then
+        [ padding 20
+        , Border.rounded 5
+        , Font.color (rgb255 255 0 0)
+        , Background.color (rgb255 255 150 150)
+        , Border.color (rgb255 255 0 0)
+        , Border.width 2
+        ]
+
+    else if index == resetState then
+        [ padding 20
+        , Border.rounded 5
+        , Font.color (rgb255 0 0 255)
+        , Background.color (rgb255 150 150 255)
+        , Border.color (rgb255 0 0 255)
+        , Border.width 2
+        , Events.onClick event
+        ]
+
+    else
+        [ padding 20
+        , Border.rounded 5
+        , Font.color (rgb255 80 80 80)
+        , Background.color (rgb255 200 200 200)
+        , Border.color (rgb255 80 80 80)
+        , Border.width 2
+        ]
+
+
+resetAreaClosed : Element Msg
+resetAreaClosed =
+    Element.column
+        [ width fill, Events.onClick (SetResetState 1) ]
+        [ Element.el [ padding 10, width fill ]
+            (text "Spielaufbau zurücksetzen [Eingeklappt]")
+        , Element.el [ padding 20 ]
+            (text "Dies setzt alles außer den Namen zurück.")
+        ]
