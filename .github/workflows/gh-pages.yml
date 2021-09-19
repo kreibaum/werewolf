@@ -1,0 +1,30 @@
+name: Github Pages Build & Deploy
+
+on:
+  push:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Elm
+        run: sudo npm install -g elm elm-spa@latest typescript uglify-js --unsafe-perm=true --allow-root
+
+      - name: Build and optimize elm code
+        run: |
+          elm make src/Main.elm --optimize --output=build/elm.js
+          mkdir ./public
+          uglifyjs ./build/elm.js -o ./public/elm.min.js --mangle --compress
+          cp static/index.html public/index.html
+          
+      - name: Deploy to Github Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
