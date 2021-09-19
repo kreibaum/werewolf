@@ -14,3 +14,7 @@ This tool does not use a server and is written as an [Elm](https://elm-lang.org)
 For development I use the [Elm Live](https://github.com/wking-io/elm-live) development server:
 
     elm-live src/Main.elm --start-page=index.html --dir=static -- --output=static/elm.js
+
+When you update the types file, make sure to run the encoder / decoder generator:
+
+    npx elm-auto-encoder-decoder src/Types.elm

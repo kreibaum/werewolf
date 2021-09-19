@@ -16,36 +16,15 @@ import FontAwesome.Regular as Regular
 import FontAwesome.Solid as Solid
 import FontAwesome.Styles
 import Html exposing (Html)
+import Json.Decode
 import Json.Encode exposing (Value)
 import List.Extra as List
 import ListHelper as List
 import Platform exposing (Program)
 import Set exposing (Set)
 import SetHelper as Set
-
-
-type alias Model =
-    { roles : List Role
-    , customRoleNameRawText : String
-    , customRoleActionsRawText : String
-    , selected : Dict String CardInformation
-    , players : List Player
-    , playersRawText : String
-    , openCard : Maybe String
-    , openPlayer : Maybe String
-    , phase : GamePhase
-    , uiScale : Int
-    }
-
-
-type alias CardInformation =
-    { count : Int
-    , players : Set String
-
-    -- Maps from a role action name to a player name
-    -- Elm does not yet mark simple wrapper types as comparable.
-    , targetPlayers : Dict String (Set String)
-    }
+import Types exposing (..)
+import Types.Auto exposing (decodeTypesModel, encodeTypesModel)
 
 
 newCard : CardInformation
@@ -90,22 +69,9 @@ removeTarget (RoleAction actionId) playerName cardInfo =
     }
 
 
-{-| Custom type to make sure we don't mix up all our different types of strings.
--}
-type RoleAction
-    = RoleAction String
-
-
 actionName : RoleAction -> String
 actionName (RoleAction actionId) =
     actionId
-
-
-type alias Player =
-    { name : String
-    , participation : Participation
-    , note : String
-    }
 
 
 newPlayer : String -> Player
@@ -116,63 +82,14 @@ newPlayer name =
     }
 
 
-{-| Yes, this type name isn't great but I don't know any other word that fits.
--}
-type Participation
-    = Alive
-    | Dead
-
-
-type GamePhase
-    = Preparation
-    | Night
-    | Day
-
-
-type Msg
-    = NoOp
-    | AddRoleButtonClick String
-    | RemoveRoleButtonClick String
-    | TypePlayerNames String
-    | SelectCard String
-    | CloseCard
-    | SelectPlayer String
-    | ClosePlayer
-    | AssignPlayerToRole String String
-    | RemovePlayerFromRole String String
-    | TargetPlayer String RoleAction String
-    | RemoveTargetPlayer String RoleAction String
-    | KillPlayer String
-    | RevivePlayer String
-    | SetPhase GamePhase
-    | IncreaseFontSize
-    | DecreaseFontSize
-    | UpdatePlayerNote Player
-    | TypeCustomRoleName String
-    | TypeCustomRoleActions String
-    | AddRole Role
-
-
 init : Value -> ( Model, Cmd msg )
 init flags =
-    let
-        initialModel =
-            case readCache flags of
-                Ok cache ->
-                    applyCache cache defaultModel
+    case Json.Decode.decodeValue decodeTypesModel flags of
+        Ok oldModel ->
+            ( oldModel, Cmd.none )
 
-                Err _ ->
-                    defaultModel
-    in
-    ( initialModel
-    , Cmd.none
-    )
-
-
-type alias Role =
-    { name : String
-    , target : List RoleActionConfig
-    }
+        Err _ ->
+            ( defaultModel, Cmd.none )
 
 
 roleTemplate : String -> List RoleActionConfig -> Role
@@ -187,10 +104,6 @@ addOrReplaceRole role roles =
 
     else
         roles ++ [ role ]
-
-
-type alias RoleActionConfig =
-    { name : RoleAction }
 
 
 targetConfig : String -> RoleActionConfig
@@ -260,9 +173,7 @@ updateWithCommand msg model =
             update msg model
 
         cacheCommand =
-            { names = newModel.players |> List.map .name }
-                |> Cache.writeCache
-                |> Cache.cachePort
+            Cache.cachePort (encodeTypesModel newModel)
     in
     ( newModel, cacheCommand )
 
